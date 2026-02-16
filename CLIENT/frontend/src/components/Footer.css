@@ -1,0 +1,133 @@
+.footer {
+  background-color: var(--secondary-color); /* Gọi từ file gọi chung */
+  color: var(--white);
+  margin-top: 60px;
+  border-top: 4px solid var(--primary-color);
+}
+
+/* Phần dịch vụ */
+.footer-services {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 25px 0;
+  border-bottom: 1px solid #222;
+}
+
+.service-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.service-item { display: flex; align-items: center; gap: 15px; }
+.service-item svg { color: var(--primary-color); }
+.service-item h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+.service-item p { color: var(--text-light); font-size: 0.8rem; }
+
+/* Grid chính */
+.footer-main {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+  gap: 40px;
+  padding: 50px 0;
+}
+
+.footer-column h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.footer-column h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 30px;
+  height: 2px;
+  background: var(--primary-color);
+}
+
+.footer-column ul { list-style: none; }
+.footer-column ul li { margin-bottom: 12px; }
+.footer-column ul li a {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.footer-column ul li a:hover { color: var(--primary-color); padding-left: 5px; }
+
+/* Brand Info */
+.footer-logo { font-size: 1.8rem; font-weight: 700; font-style: italic; color: var(--white); }
+.footer-logo span { color: var(--primary-color); }
+.footer-tagline { color: var(--primary-color); font-size: 0.75rem; font-weight: 700; margin-top: -5px; margin-bottom: 15px; }
+.footer-desc { color: var(--text-light); font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; }
+
+.social-links { display: flex; gap: 12px; }
+.social-links a {
+  background: #252525;
+  color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.social-links a:hover { background: var(--primary-color); transform: translateY(-3px); }
+
+/* Newsletter */
+.newsletter-form {
+  display: flex;
+  background: #252525;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.newsletter-form input {
+  background: transparent;
+  border: none;
+  padding: 12px;
+  color: white;
+  flex: 1;
+  outline: none;
+  font-family: var(--font-main);
+}
+
+.newsletter-form button {
+  background: var(--primary-color);
+  border: none;
+  color: white;
+  padding: 0 15px;
+  cursor: pointer;
+}
+
+/* Bottom Bar */
+.footer-bottom {
+  border-top: 1px solid #222;
+  padding: 25px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.contact-summary { display: flex; gap: 20px; }
+.contact-summary span { display: flex; align-items: center; gap: 6px; }
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+  .footer-main { grid-template-columns: 1fr 1fr; }
+  .service-wrapper { flex-direction: column; gap: 20px; }
+}
+
+@media (max-width: 576px) {
+  .footer-main { grid-template-columns: 1fr; gap: 30px; }
+  .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
+  .contact-summary { flex-direction: column; gap: 10px; }
+}

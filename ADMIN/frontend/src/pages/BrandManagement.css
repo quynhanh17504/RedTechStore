@@ -1,0 +1,91 @@
+/* Kế thừa các style chung từ Admin Layout */
+
+.brand-name-cell strong {
+  color: var(--secondary-color);
+  font-size: 1.05rem;
+}
+
+.text-center { text-align: center; }
+
+/* Badge hiển thị tổng số lượng */
+.total-badge {
+  background: #f0f2f5;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.action-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.action-edit-btn {
+  color: var(--text-light);
+  transition: var(--transition);
+}
+
+.action-edit-btn:hover { color: #3B82F6; }
+
+.form-note {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* Modal tùy chỉnh cho thương hiệu */
+.brand-modal {
+  width: 400px; /* Nhỏ gọn hơn vì chỉ có 1 trường nhập */
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+  .admin-table thead th:nth-child(2),
+  .admin-table thead th:nth-child(3),
+  .admin-table thead th:nth-child(4),
+  .admin-table tbody td:nth-child(2),
+  .admin-table tbody td:nth-child(3),
+  .admin-table tbody td:nth-child(4) {
+    display: none; /* Ẩn bớt các cột chi tiết trên mobile để tránh tràn */
+  }
+}
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.export-tools {
+  display: flex;
+  gap: 8px;
+  background: var(--white);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.tool-btn.excel {
+  color: #1D6F42; /* Màu xanh Excel */
+}
+
+.tool-btn.pdf {
+  color: #E10600; /* Màu đỏ PDF RedTech */
+}
+
+.tool-btn:hover {
+  background: var(--bg-light);
+  transform: translateY(-2px);
+}

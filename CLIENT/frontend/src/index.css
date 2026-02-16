@@ -1,0 +1,98 @@
+/* Import font Cabin theo yêu cầu */
+@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&display=swap');
+
+:root {
+  /* --- BẢNG MÀU CHỦ ĐẠO (Brand Colors) --- */
+  --primary-color: #E10600;
+  --primary-hover: #B50500;
+  --secondary-color: #111111;
+  --white: #FFFFFF;
+  --bg-light: #F8F9FA;
+  
+  /* --- TRẠNG THÁI VÀ BIÊN (Status & Borders) --- */
+  --border-color: #EEEEEE;
+  --error: #FF3B30;
+  --success: #34C759;
+  --star-gold: #FFB800;
+
+  /* --- VĂN BẢN (Typography) --- */
+  --text-main: #1A1A1A;
+  --text-light: #666666;
+  --font-main: 'Cabin', sans-serif;
+
+  /* --- HIỆU ỨNG TRÁNG GƯƠNG (Glassmorphism) --- */
+  --nav-glass-bg: rgba(10, 10, 10, 0.45);
+  --nav-glass-scrolled: rgba(0, 0, 0, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: 16px;
+
+  /* --- ĐỔ BÓNG & BO GÓC (Shadows & Radius) --- */
+  --radius-lg: 30px;
+  --radius-md: 15px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 5px 15px rgba(0,0,0,0.05);
+  --shadow-md: 0 10px 30px rgba(0,0,0,0.1);
+  --shadow-dark: 0 4px 30px rgba(0, 0, 0, 0.5);
+  --glow-red: 0 0 15px rgba(225, 6, 0, 0.35);
+
+  /* --- CHUYỂN ĐỘNG (Animations) --- */
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- THIẾT LẬP CƠ BẢN (Base Styles) --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Responsive font-size base */
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-light);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Tránh scroll ngang trên mobile */
+}
+
+/* --- CONTAINER RESPONSIVE --- */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* --- CẢI THIỆN TƯƠNG TÁC (Global Tags) --- */
+a { 
+  text-decoration: none; 
+  color: inherit; 
+  transition: var(--transition);
+}
+
+button { 
+  font-family: var(--font-main); 
+  border: none; 
+  background: none; 
+  cursor: pointer;
+  outline: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- TIỆN ÍCH RESPONSIVE CHO TEXT --- */
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+  .container { padding: 0 15px; }
+}

@@ -1,0 +1,100 @@
+/* Import font Cabin theo yêu cầu */
+@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&display=swap');
+
+:root {
+  /* --- BẢNG MÀU CHỦ ĐẠO REDTECH --- */
+  --primary-color: #E10600;
+  --primary-hover: #B50500;
+  --secondary-color: #111111;
+  --white: #FFFFFF;
+  --bg-light: #F4F7FE; 
+  
+  /* --- VĂN BẢN & FONT --- */
+  --text-main: #1A1A1A;
+  --text-light: #757575;
+  --border-color: #E2E8F0;
+  --font-main: 'Cabin', sans-serif;
+
+  /* --- ĐỔ BÓNG & BO GÓC --- */
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --glow-red: 0 0 15px rgba(225, 6, 0, 0.3);
+  
+  /* --- CẤU HÌNH LAYOUT --- */
+  --sidebar-width: 260px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- RESET & BASE STYLES --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Cực kỳ quan trọng để không bị tràn layout */
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-light);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* Ngăn chặn cuộn ngang toàn trang */
+  width: 100%;
+}
+
+/* Cấu trúc Layout Admin chuẩn để sửa lỗi "mất 1 khúc" */
+.admin-layout {
+  display: flex;
+  width: 100vw; /* Chiều rộng toàn màn hình */
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex: 1; /* Tự động lấp đầy phần còn lại sau Sidebar */
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width)); 
+  padding: 30px;
+  min-width: 0; /* Cho phép container co giãn bên trong flex */
+}
+
+/* --- HELPER STYLES --- */
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+}
+
+button {
+  font-family: var(--font-main);
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Scrollbar tùy chỉnh */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-light);
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Responsive cho Sidebar */
+@media (max-width: 1024px) {
+  :root { --sidebar-width: 80px; }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-width: 0px; }
+  .admin-main { padding: 15px; }
+}

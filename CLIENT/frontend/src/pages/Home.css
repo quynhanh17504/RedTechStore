@@ -1,0 +1,147 @@
+.home-page {
+  /* GIẢI PHÁP CHỐNG CHE KHUẤT: Padding-top bằng chiều cao Navbar (khoảng 80px) */
+  padding-top: 80px; 
+  background-color: var(--bg-light);
+}
+
+/* --- HÀNH ĐỘNG CHỈ SỬA SLIDER: Thu nhỏ và khớp tỉ lệ 1660x750 --- */
+.hero-slider {
+  width: 100%;
+  /* Sử dụng aspect-ratio để khóa tỉ lệ ảnh thiết kế, giúp banner không bị méo */
+  aspect-ratio: 1660 / 750; 
+  /* Khống chế chiều cao tối đa để banner không chiếm hết màn hình */
+  max-height: 600px; 
+  margin: 0 auto;
+  background-color: var(--secondary-color);
+  overflow: hidden;
+  position: relative;
+}
+
+.mainSwiper {
+  width: 100%;
+  height: 100%;
+}
+
+.slide-item {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  /* Giữ display flex nếu bạn muốn canh chỉnh các thành phần điều hướng nội bộ */
+  display: flex;
+  align-items: center;
+}
+
+/* Tùy chỉnh dấu chấm chuyển slide (Pagination) để nhỏ gọn hơn */
+.swiper-pagination-bullet {
+  background: var(--white) !important;
+  opacity: 0.5;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--primary-color) !important;
+  opacity: 1;
+}
+
+/* --- FEATURES BAR --- */
+.features-glass-bar {
+  margin-top: -40px;
+  position: relative;
+  z-index: 5;
+  padding-bottom: 40px;
+}
+
+.features-inner {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--white);
+  padding: 20px;
+  border-radius: 25px;
+  display: flex;
+  justify-content: space-around;
+  box-shadow: var(--shadow-md);
+}
+
+.f-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+.f-item svg { color: var(--primary-color); }
+
+/* --- SECTIONS --- */
+.category-section {
+  padding: 60px 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.title-underline {
+  width: 60px;
+  height: 4px;
+  background: var(--primary-color);
+  margin-top: 8px;
+  border-radius: 2px;
+}
+
+.view-all-glass {
+  background: var(--glass-white);
+  border: 1px solid var(--border-color);
+  padding: 10px 25px;
+  border-radius: 50px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.view-all-glass:hover {
+  background: var(--secondary-color);
+  color: var(--white);
+  transform: scale(1.05);
+}
+
+/* --- GRID --- */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
+  .features-inner { flex-direction: column; gap: 20px; align-items: center; }
+}
+
+@media (max-width: 768px) {
+  .hero-slider { aspect-ratio: 16/9; max-height: 400px; } /* Mobile cho banner cao hơn tí để dễ nhìn */
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+  .glass-hero-card { padding: 30px; border-radius: 25px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+}
+
+@media (max-width: 480px) {
+  .product-grid { grid-template-columns: 1fr; }
+}

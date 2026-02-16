@@ -1,0 +1,294 @@
+/* --- TỔNG THỂ TRANG AUTH --- */
+.auth-page {
+  /* Khoảng cách an toàn để không bị Navbar tráng gương che khuất */
+  padding-top: 120px; 
+  padding-bottom: 60px;
+  min-height: 100vh;
+  background-color: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cabin', sans-serif;
+}
+
+.auth-container {
+  max-width: 950px !important;
+  width: 100%;
+}
+
+/* --- CARD ĐĂNG NHẬP/ĐĂNG KÝ --- */
+.auth-card {
+  background: var(--white);
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: var(--shadow-dark);
+  transition: all 0.4s ease;
+}
+
+/* Trường hợp Step 2 hoặc Form đơn */
+.auth-card.single-form {
+  grid-template-columns: 1fr;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* --- PHẦN FORM (BÊN TRÁI) --- */
+.auth-form-section {
+  padding: 50px;
+}
+
+.auth-header {
+  margin-bottom: 30px;
+}
+
+.auth-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-bottom: 10px;
+}
+
+.auth-header p {
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* --- NHẬP LIỆU (INPUT GROUPS) --- */
+.input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-group svg {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+  transition: 0.3s;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 15px;
+  outline: none;
+  font-family: 'Cabin', sans-serif;
+  background: #fdfdfd;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+  border-color: var(--primary-color);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(225, 6, 0, 0.05);
+}
+
+.input-group input:focus + svg {
+  color: var(--primary-color);
+}
+
+/* --- BỘ CHỌN GIỚI TÍNH (GENDER SELECTOR) --- */
+.gender-selector {
+  margin-bottom: 25px;
+}
+
+.label-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-bottom: 12px;
+  display: block;
+}
+
+.gender-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.gender-card {
+  background: #f8f9fa;
+  border: 1.5px solid var(--border-color);
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.gender-card input {
+  display: none;
+}
+
+.gender-card:hover {
+  background: #f1f1f1;
+}
+
+.gender-card.active {
+  border-color: var(--primary-color);
+  background: rgba(225, 6, 0, 0.05);
+  color: var(--primary-color);
+}
+
+/* --- NÚT BẤM VÀ ĐIỀU HƯỚNG --- */
+.auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-bottom: 25px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-light);
+}
+
+.forgot-link {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  background: var(--secondary-color);
+  color: var(--white);
+  padding: 16px;
+  border: none;
+  border-radius: 15px;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-submit-btn:hover {
+  background: var(--primary-color);
+  box-shadow: var(--glow-red);
+  transform: translateY(-2px);
+}
+
+/* --- SOCIAL AUTH (GOOGLE) --- */
+.auth-divider {
+  text-align: center;
+  margin: 25px 0;
+  position: relative;
+}
+
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.auth-divider span {
+  background: var(--white);
+  padding: 0 15px;
+  position: relative;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 15px;
+  background: var(--white);
+  font-weight: 700;
+  font-family: 'Cabin', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.google-btn:hover {
+  background: #f8f9fa;
+  border-color: #4285F4;
+  color: #4285F4;
+}
+
+/* --- FOOTER TRANG AUTH --- */
+.auth-footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.95rem;
+}
+
+.auth-footer span {
+  color: var(--primary-color);
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.auth-footer span:hover {
+  text-decoration: underline;
+}
+
+/* --- PHẦN BANNER THÔNG TIN (BÊN PHẢI) --- */
+.auth-info-section {
+  background: linear-gradient(135deg, var(--secondary-color) 0%, #1a1a1a 100%);
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: var(--white);
+  position: relative;
+}
+
+.info-content h3 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 15px;
+}
+
+.info-content h3 span {
+  color: var(--primary-color);
+}
+
+/* --- ĐÁP ỨNG (RESPONSIVE) --- */
+@media (max-width: 900px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+  .auth-info-section {
+    display: none;
+  }
+  .auth-container {
+    max-width: 550px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding-top: 100px;
+  }
+  .auth-form-section {
+    padding: 30px 20px;
+  }
+  .gender-options {
+    grid-template-columns: 1fr;
+  }
+}

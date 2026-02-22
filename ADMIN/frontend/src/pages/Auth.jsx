@@ -13,32 +13,30 @@ const AdminLogin = () => {
 
   // URL API Backend Admin (Port 5000)
   const API_URL = 'http://localhost:5000/admin/auth/login';
-
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
   e.preventDefault();
   const loadingToast = toast.loading('Đang xác thực quyền quản trị...');
 
   try {
     const res = await axios.post(API_URL, { email, password });
 
-    // Kiểm tra chính xác cấu trúc trả về
+    // 1. Kiểm tra res.data.user (thay vì res.data.admin)
     if (res.data && res.data.token) {
-      // Vì ở Backend bạn trả về: res.json({ token, admin: { id, fullname, role } })
-      // Nên ở đây phải truy cập vào res.data.admin
-      const adminData = res.data.admin; 
+      const userData = res.data.user; 
 
-      if (adminData) {
+      // 2. Kiểm tra thêm một lần nữa ở Client cho chắc chắn là role admin
+      if (userData && userData.role === 'admin') {
         localStorage.setItem('adminToken', res.data.token);
-        localStorage.setItem('adminInfo', JSON.stringify(adminData));
+        localStorage.setItem('adminInfo', JSON.stringify(userData));
 
-        toast.success(`Chào mừng ${adminData.fullname} quay trở lại!`, { id: loadingToast });
+        toast.success(`Chào mừng ${userData.fullname} quay trở lại!`, { id: loadingToast });
 
         setTimeout(() => {
           navigate('/admin/dashboard');
         }, 1000);
       } else {
-        // Trường hợp token có nhưng object admin bị thiếu
-        toast.error("Không tìm thấy thông tin quản trị viên!", { id: loadingToast });
+        // Trường hợp role là client nhưng cố tình đăng nhập vào trang admin
+        toast.error("Bạn không có quyền truy cập khu vực này!", { id: loadingToast });
       }
     }
   } catch (err) {

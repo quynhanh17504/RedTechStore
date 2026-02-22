@@ -1,61 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Laptop, Headphones } from 'lucide-react';
+import axios from 'axios';
+import { Smartphone, Laptop, Headphones, FilterX, LayoutGrid } from 'lucide-react';
 import ProductCard from '../components/ProductCard'; 
 import './Products.css';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [category, setCategory] = useState('all');
-  const [brand, setBrand] = useState('all');
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeBrand, setActiveBrand] = useState('all');
   const [sortType, setSortType] = useState('default');
 
+  // Hàm helper để render icon dựa trên tên danh mục trong DB
+  const getCategoryIcon = (name) => {
+    const iconSize = 18;
+    switch (name?.toLowerCase()) {
+      case 'smartphone':
+      case 'điện thoại':
+        return <Smartphone size={iconSize} />;
+      case 'laptop':
+      case 'máy tính xách tay':
+        return <Laptop size={iconSize} />;
+      case 'accessory':
+      case 'phụ kiện công nghệ':
+        return <Headphones size={iconSize} />;
+      default:
+        return <LayoutGrid size={iconSize} />;
+    }
+  };
+
   useEffect(() => {
-    const mockData = [
-      { id: 1, name: "iPhone 17 Pro Max", price: 29990000, category: "phone", brand: "Apple", image_url: "/images/products/iphone17promax.jpg" },
-      { id: 2, name: "Samsung S25 Ultra", price: 26990000, category: "phone", brand: "Samsung", image_url: "/images/products/samsungs25.jpg" },
-      { id: 3, name: "Google Pixel 9 Pro", price: 22500000, category: "phone", brand: "Google", image_url: "/images/products/pixel9.jpg" },
-      { id: 4, name: "Xiaomi 15 Ultra", price: 19990000, category: "phone", brand: "Xiaomi", image_url: "/images/products/xiaomi15.jpg" },
-      { id: 5, name: "MacBook Pro M3", price: 39990000, category: "laptop", brand: "Apple", image_url: "/images/products/macbook.jpg" },
-      { id: 6, name: "Dell XPS 13 2026", price: 35000000, category: "laptop", brand: "Dell", image_url: "/images/products/dellxps.jpg" },
-      { id: 7, name: "Asus ROG Zephyrus", price: 45000000, category: "laptop", brand: "Asus", image_url: "/images/products/rog.jpg" },
-      { id: 8, name: "HP Spectre x360", price: 32000000, category: "laptop", brand: "HP", image_url: "/images/products/hpspectre.jpg" },
-      { id: 9, name: "Tai nghe Sony XM5", price: 6990000, category: "accessory", brand: "Sony", image_url: "/images/products/sony-xm5.jpg" },
-      { id: 10, name: "AirPods Pro Gen 3", price: 5500000, category: "accessory", brand: "Apple", image_url: "/images/products/airpods.jpg" },
-      { id: 11, name: "Sạc MagSafe 45W", price: 1200000, category: "accessory", brand: "Apple", image_url: "/images/products/magsafe.jpg" },
-      { id: 12, name: "Cáp sạc siêu bền", price: 450000, category: "accessory", brand: "Other", image_url: "/images/products/cable.jpg" },
-    ];
-    setProducts(mockData);
-    setFilteredProducts(mockData);
+    const fetchAllData = async () => {
+      try {
+        const urls = [
+          'http://localhost:3005/client/products',
+          'http://localhost:3005/client/categories',
+          'http://localhost:3005/client/brands'
+        ];
+
+        const responses = await Promise.all(
+          urls.map(url => axios.get(url).catch(err => {
+            console.error(`Lỗi tại ${url}:`, err.message);
+            return { data: [] };
+          }))
+        );
+
+        setProducts(responses[0].data);
+        setFilteredProducts(responses[0].data);
+        setCategories(responses[1].data);
+        setBrands(responses[2].data);
+      } catch (err) {
+        console.error("Lỗi hệ thống:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAllData();
   }, []);
 
   useEffect(() => {
     let result = [...products];
-    if (category !== 'all') result = result.filter(p => p.category === category);
-    if (brand !== 'all') result = result.filter(p => p.brand === brand);
-
-    if (sortType === 'low-to-high') result.sort((a, b) => a.price - b.price);
-    if (sortType === 'high-to-low') result.sort((a, b) => b.price - a.price);
+    if (activeCategory !== 'all') {
+      result = result.filter(p => String(p.category_id) === String(activeCategory));
+    }
+    if (activeBrand !== 'all') {
+      result = result.filter(p => String(p.brand_id) === String(activeBrand));
+    }
+    if (sortType === 'low-to-high') result.sort((a, b) => Number(a.price) - Number(b.price));
+    if (sortType === 'high-to-low') result.sort((a, b) => Number(b.price) - Number(a.price));
 
     setFilteredProducts(result);
-  }, [category, brand, sortType, products]);
+  }, [activeCategory, activeBrand, sortType, products]);
 
-  const brands = ["all", "Apple", "Samsung", "Sony", "Dell", "Xiaomi"];
+  if (loading) return <div className="redtech-loader-full">Đang kết nối database...</div>;
 
   return (
-    <div className="products-page">
+    <div className="products-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
       <div className="container">
         <div className="products-header">
           <div className="header-info">
-            <h1>TẤT CẢ<span> SẢN PHẨM</span></h1>
-            <p>{filteredProducts.length} sản phẩm phù hợp</p>
+            <h1>TẤT CẢ <span>SẢN PHẨM</span></h1>
+            <p>Tìm thấy {filteredProducts.length} sản phẩm</p>
           </div>
-          
           <div className="header-actions">
-            <select className="sort-select-v2" onChange={(e) => setSortType(e.target.value)}>
-              <option value="default">Sắp xếp: Mới nhất</option>
-              <option value="low-to-high">Giá: Thấp đến Cao</option>
-              <option value="high-to-low">Giá: Cao đến Thấp</option>
+            <select className="sort-select-v2" value={sortType} onChange={(e) => setSortType(e.target.value)}>
+              <option value="default">Mới nhất</option>
+              <option value="low-to-high">Giá tăng dần</option>
+              <option value="high-to-low">Giá giảm dần</option>
             </select>
           </div>
         </div>
@@ -65,20 +100,38 @@ const Products = () => {
             <div className="filter-group">
               <h3 className="filter-label">Danh mục</h3>
               <div className="cat-options">
-                <button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>Tất cả</button>
-                <button className={category === 'phone' ? 'active' : ''} onClick={() => setCategory('phone')}><Smartphone size={16}/> Điện thoại</button>
-                <button className={category === 'laptop' ? 'active' : ''} onClick={() => setCategory('laptop')}><Laptop size={16}/> Laptop</button>
-                <button className={category === 'accessory' ? 'active' : ''} onClick={() => setCategory('accessory')}><Headphones size={16}/> Phụ kiện</button>
+                <button 
+                  className={activeCategory === 'all' ? 'active' : ''} 
+                  onClick={() => setActiveCategory('all')}
+                >
+                  <LayoutGrid size={18} /> Tất cả
+                </button>
+                
+                {categories.map(cat => (
+                  <button 
+                    key={cat.id} 
+                    className={activeCategory === String(cat.id) ? 'active' : ''} 
+                    onClick={() => setActiveCategory(String(cat.id))}
+                  >
+                    {/* Render Icon động dựa trên tên */}
+                    {getCategoryIcon(cat.name)} 
+                    {cat.name}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="filter-group">
               <h3 className="filter-label">Thương hiệu</h3>
               <div className="brand-list">
+                <label className="brand-checkbox">
+                  <input type="radio" name="brand" checked={activeBrand === 'all'} onChange={() => setActiveBrand('all')} />
+                  <span className="brand-name">TẤT CẢ</span>
+                </label>
                 {brands.map(b => (
-                  <label key={b} className="brand-checkbox">
-                    <input type="radio" name="brand" checked={brand === b} onChange={() => setBrand(b)} />
-                    <span className="brand-name">{b.toUpperCase()}</span>
+                  <label key={b.id} className="brand-checkbox">
+                    <input type="radio" name="brand" checked={activeBrand === String(b.id)} onChange={() => setActiveBrand(String(b.id))} />
+                    <span className="brand-name">{b.name.toUpperCase()}</span>
                   </label>
                 ))}
               </div>
@@ -86,17 +139,15 @@ const Products = () => {
           </aside>
 
           <main className="product-main">
-            <div className="product-grid">
-              {/* SỬ DỤNG COMPONENT PRODUCT CARD TẠI ĐÂY */}
-              {filteredProducts.map(p => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-            
-            {filteredProducts.length === 0 && (
+            {filteredProducts.length > 0 ? (
+              <div className="product-grid">
+                {filteredProducts.map(p => <ProductCard key={p.id} product={p} />)}
+              </div>
+            ) : (
               <div className="no-products">
-                <p>Không tìm thấy sản phẩm nào khớp với bộ lọc.</p>
-                <button onClick={() => {setCategory('all'); setBrand('all')}}>Xóa bộ lọc</button>
+                <FilterX size={48} />
+                <p>Không có sản phẩm nào phù hợp.</p>
+                <button onClick={() => {setActiveCategory('all'); setActiveBrand('all')}}>Xóa lọc</button>
               </div>
             )}
           </main>

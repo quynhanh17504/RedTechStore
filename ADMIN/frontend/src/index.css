@@ -1,4 +1,4 @@
-/* Import font Cabin theo yêu cầu */
+/* --- Import font Cabin --- */
 @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&display=swap');
 
 :root {
@@ -8,6 +8,18 @@
   --secondary-color: #111111;
   --white: #FFFFFF;
   --bg-light: #F4F7FE; 
+
+  /* --- MÀU TRẠNG THÁI & HỖ TRỢ (DASHBOARD) --- */
+  --success: #48BB78;
+  --info: #4299E1;
+  --warning: #ED8936;
+  --danger: #F56565;
+
+  /* --- MÀU NỀN NHẠT (PASTEL) CHO ICON & TAGS --- */
+  --red-light: #FFF5F5;
+  --blue-light: #EBF8FF;
+  --green-light: #F0FFF4;
+  --orange-light: #FFFAF0;
   
   /* --- VĂN BẢN & FONT --- */
   --text-main: #1A1A1A;
@@ -22,17 +34,25 @@
   --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
   --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
   --glow-red: 0 0 15px rgba(225, 6, 0, 0.3);
+  --shadow-profile: 0 4px 10px rgba(0,0,0,0.03);
   
   /* --- CẤU HÌNH LAYOUT --- */
   --sidebar-width: 260px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --gradient-red: linear-gradient(135deg, #FF416C 0%, #E10600 100%);
+  
+  /* Màu sắc phụ trợ cho Stat Cards */
+  --blue-gradient: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+  --green-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  --orange-gradient: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+
 }
 
 /* --- RESET & BASE STYLES --- */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box; /* Cực kỳ quan trọng để không bị tràn layout */
+  box-sizing: border-box;
 }
 
 body {
@@ -40,23 +60,24 @@ body {
   background-color: var(--bg-light);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden; /* Ngăn chặn cuộn ngang toàn trang */
+  overflow-x: hidden;
   width: 100%;
 }
 
-/* Cấu trúc Layout Admin chuẩn để sửa lỗi "mất 1 khúc" */
+/* --- ADMIN LAYOUT STRUCTURE --- */
 .admin-layout {
   display: flex;
-  width: 100vw; /* Chiều rộng toàn màn hình */
+  width: 100vw;
   min-height: 100vh;
 }
 
 .admin-main {
-  flex: 1; /* Tự động lấp đầy phần còn lại sau Sidebar */
+  flex: 1;
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width)); 
   padding: 30px;
-  min-width: 0; /* Cho phép container co giãn bên trong flex */
+  min-width: 0; /* Quan trọng để flex child không bị phình */
+  transition: var(--transition);
 }
 
 /* --- HELPER STYLES --- */
@@ -74,7 +95,7 @@ button {
   outline: none;
 }
 
-/* Scrollbar tùy chỉnh */
+/* --- SCROLLBAR CUSTOM --- */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -82,19 +103,37 @@ button {
   background: var(--bg-light);
 }
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: #cbd5e0;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-color);
 }
 
-/* Responsive cho Sidebar */
+/* --- TRẠNG THÁI ĐƠN HÀNG (STATUS PILLS) --- */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: capitalize;
+}
+.status-pill.success, .status-pill.completed { background: var(--green-light); color: var(--success); }
+.status-pill.pending { background: var(--orange-light); color: var(--warning); }
+.status-pill.cancelled { background: var(--red-light); color: var(--danger); }
+.status-pill.processing { background: var(--blue-light); color: var(--info); }
+
+/* --- RESPONSIVE --- */
 @media (max-width: 1024px) {
   :root { --sidebar-width: 80px; }
 }
 
 @media (max-width: 768px) {
   :root { --sidebar-width: 0px; }
-  .admin-main { padding: 15px; }
+  .admin-main { 
+    margin-left: 0;
+    width: 100%;
+    padding: 20px; 
+  }
 }

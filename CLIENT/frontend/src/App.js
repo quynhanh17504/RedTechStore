@@ -45,7 +45,7 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Auth />} />
-              {/* Bạn có thể thêm trang 404 element={<NotFound />} ở đây */}
+              <Route path="/category/:categoryId" element={<Products />} />
             </Routes>
           </main>
 

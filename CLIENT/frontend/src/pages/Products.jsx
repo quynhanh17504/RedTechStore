@@ -1,60 +1,55 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // Thêm useParams và useNavigate
 import axios from 'axios';
 import { Smartphone, Laptop, Headphones, FilterX, LayoutGrid } from 'lucide-react';
 import ProductCard from '../components/ProductCard'; 
 import './Products.css';
 
 const Products = () => {
+  const { categoryId } = useParams(); // Lấy ID từ URL (ví dụ: /category/1)
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeCategory, setActiveCategory] = useState('all');
+  // Khởi tạo state từ categoryId của URL nếu có
+  const [activeCategory, setActiveCategory] = useState(categoryId || 'all');
   const [activeBrand, setActiveBrand] = useState('all');
   const [sortType, setSortType] = useState('default');
 
-  // Hàm helper để render icon dựa trên tên danh mục trong DB
+  // Hàm helper render icon
   const getCategoryIcon = (name) => {
     const iconSize = 18;
     switch (name?.toLowerCase()) {
       case 'smartphone':
-      case 'điện thoại':
-        return <Smartphone size={iconSize} />;
+      case 'điện thoại': return <Smartphone size={iconSize} />;
       case 'laptop':
-      case 'máy tính xách tay':
-        return <Laptop size={iconSize} />;
+      case 'máy tính xách tay': return <Laptop size={iconSize} />;
       case 'accessory':
-      case 'phụ kiện công nghệ':
-        return <Headphones size={iconSize} />;
-      default:
-        return <LayoutGrid size={iconSize} />;
+      case 'phụ kiện':
+      case 'phụ kiện công nghệ': return <Headphones size={iconSize} />;
+      default: return <LayoutGrid size={iconSize} />;
     }
   };
 
+  // 1. Fetch dữ liệu ban đầu
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        const urls = [
-          'http://localhost:3005/client/products',
-          'http://localhost:3005/client/categories',
-          'http://localhost:3005/client/brands'
-        ];
+        const [prodRes, catRes, brandRes] = await Promise.all([
+          axios.get('http://localhost:3005/client/products'),
+          axios.get('http://localhost:3005/client/categories'),
+          axios.get('http://localhost:3005/client/brands')
+        ]);
 
-        const responses = await Promise.all(
-          urls.map(url => axios.get(url).catch(err => {
-            console.error(`Lỗi tại ${url}:`, err.message);
-            return { data: [] };
-          }))
-        );
-
-        setProducts(responses[0].data);
-        setFilteredProducts(responses[0].data);
-        setCategories(responses[1].data);
-        setBrands(responses[2].data);
+        setProducts(prodRes.data);
+        setCategories(catRes.data);
+        setBrands(brandRes.data);
       } catch (err) {
-        console.error("Lỗi hệ thống:", err);
+        console.error("Lỗi kết nối database:", err);
       } finally {
         setLoading(false);
       }
@@ -62,19 +57,40 @@ const Products = () => {
     fetchAllData();
   }, []);
 
+  // 2. Cập nhật activeCategory khi URL thay đổi (VD: đang ở trang này mà nhấn Menu khác)
+  useEffect(() => {
+    if (categoryId) {
+      setActiveCategory(String(categoryId));
+    } else {
+      setActiveCategory('all');
+    }
+  }, [categoryId]);
+
+  // 3. Logic Lọc và Sắp xếp
   useEffect(() => {
     let result = [...products];
+
     if (activeCategory !== 'all') {
       result = result.filter(p => String(p.category_id) === String(activeCategory));
     }
     if (activeBrand !== 'all') {
       result = result.filter(p => String(p.brand_id) === String(activeBrand));
     }
+
     if (sortType === 'low-to-high') result.sort((a, b) => Number(a.price) - Number(b.price));
     if (sortType === 'high-to-low') result.sort((a, b) => Number(b.price) - Number(a.price));
 
     setFilteredProducts(result);
   }, [activeCategory, activeBrand, sortType, products]);
+
+  // Hàm xử lý khi click vào nút danh mục ở Sidebar
+  const handleCategoryClick = (id) => {
+    if (id === 'all') {
+      navigate('/products');
+    } else {
+      navigate(`/category/${id}`);
+    }
+  };
 
   if (loading) return <div className="redtech-loader-full">Đang kết nối database...</div>;
 
@@ -83,7 +99,14 @@ const Products = () => {
       <div className="container">
         <div className="products-header">
           <div className="header-info">
-            <h1>TẤT CẢ <span>SẢN PHẨM</span></h1>
+            {/* Tiêu đề động dựa trên danh mục đang chọn */}
+            <h1>
+              {activeCategory === 'all' 
+                ? 'TẤT CẢ ' 
+                : categories.find(c => String(c.id) === activeCategory)?.name.toUpperCase() + ' ' 
+              }
+              <span>SẢN PHẨM</span>
+            </h1>
             <p>Tìm thấy {filteredProducts.length} sản phẩm</p>
           </div>
           <div className="header-actions">
@@ -102,7 +125,7 @@ const Products = () => {
               <div className="cat-options">
                 <button 
                   className={activeCategory === 'all' ? 'active' : ''} 
-                  onClick={() => setActiveCategory('all')}
+                  onClick={() => handleCategoryClick('all')}
                 >
                   <LayoutGrid size={18} /> Tất cả
                 </button>
@@ -111,9 +134,8 @@ const Products = () => {
                   <button 
                     key={cat.id} 
                     className={activeCategory === String(cat.id) ? 'active' : ''} 
-                    onClick={() => setActiveCategory(String(cat.id))}
+                    onClick={() => handleCategoryClick(String(cat.id))}
                   >
-                    {/* Render Icon động dựa trên tên */}
                     {getCategoryIcon(cat.name)} 
                     {cat.name}
                   </button>
@@ -147,7 +169,7 @@ const Products = () => {
               <div className="no-products">
                 <FilterX size={48} />
                 <p>Không có sản phẩm nào phù hợp.</p>
-                <button onClick={() => {setActiveCategory('all'); setActiveBrand('all')}}>Xóa lọc</button>
+                <button onClick={() => {navigate('/products'); setActiveBrand('all')}}>Xóa lọc</button>
               </div>
             )}
           </main>

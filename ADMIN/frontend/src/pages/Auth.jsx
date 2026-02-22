@@ -1,20 +1,55 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
+import axios from 'axios'; // Import Axios
+import toast from 'react-hot-toast'; // Import Toast
+import { useNavigate } from 'react-router-dom'; // Để chuyển trang sau khi login
 import './Auth.css';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // Xử lý logic đăng nhập tại đây
-    console.log("Đăng nhập với:", email, password);
-  };
+  // URL API Backend Admin (Port 5000)
+  const API_URL = 'http://localhost:5000/admin/auth/login';
+
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  const loadingToast = toast.loading('Đang xác thực quyền quản trị...');
+
+  try {
+    const res = await axios.post(API_URL, { email, password });
+
+    // Kiểm tra chính xác cấu trúc trả về
+    if (res.data && res.data.token) {
+      // Vì ở Backend bạn trả về: res.json({ token, admin: { id, fullname, role } })
+      // Nên ở đây phải truy cập vào res.data.admin
+      const adminData = res.data.admin; 
+
+      if (adminData) {
+        localStorage.setItem('adminToken', res.data.token);
+        localStorage.setItem('adminInfo', JSON.stringify(adminData));
+
+        toast.success(`Chào mừng ${adminData.fullname} quay trở lại!`, { id: loadingToast });
+
+        setTimeout(() => {
+          navigate('/admin/dashboard');
+        }, 1000);
+      } else {
+        // Trường hợp token có nhưng object admin bị thiếu
+        toast.error("Không tìm thấy thông tin quản trị viên!", { id: loadingToast });
+      }
+    }
+  } catch (err) {
+    console.error("Lỗi đăng nhập:", err);
+    const errorMsg = err.response?.data?.message || 'Lỗi server hoặc tài khoản không đúng';
+    toast.error(errorMsg, { id: loadingToast });
+  }
+};
 
   return (
-    <div className="admin-login-page">
+    <div className="admin-login-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
       <div className="login-card">
         <div className="login-header">
           <div className="brand-logo">RT</div>

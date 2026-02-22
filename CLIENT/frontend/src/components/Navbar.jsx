@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, Laptop, Smartphone, Headphones, LayoutGrid } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, User, Search, Menu, X, ChevronDown, Laptop, Smartphone, Headphones, LayoutGrid, LogOut, Settings } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './Navbar.css';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // Dropdown tài khoản
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState(null);
 
+  // Kiểm tra trạng thái đăng nhập
   useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Hàm Đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    toast.success('Đã đăng xuất tài khoản');
+    navigate('/login');
+    setIsUserMenuOpen(false);
+  };
 
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -32,7 +52,6 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="nav-main-links">
-          {/* Mục Tất cả sản phẩm mới thêm */}
           <Link to="/products" className="nav-link-item">Sản phẩm</Link>
 
           <div className="nav-categories-desktop">
@@ -59,10 +78,38 @@ const Navbar = () => {
 
         {/* Actions */}
         <div className="nav-actions">
-          <Link to="/login" className="action-item hide-mobile">
-            <User size={22} />
-            <span>Tài khoản</span>
-          </Link>
+          {user ? (
+            // HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP
+            <div className="nav-user-dropdown">
+              <button className="action-item user-active-btn" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
+                <User size={22} />
+                <span className="user-name">{user.fullname.split(' ').pop()}</span>
+                <ChevronDown size={14} />
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="user-dropdown-menu">
+                  <div className="user-info-header">
+                    <p className="info-name">{user.fullname}</p>
+                    <p className="info-email">{user.email}</p>
+                  </div>
+                  <hr />
+                  <Link to="/profile" onClick={() => setIsUserMenuOpen(false)}>
+                    <Settings size={16} /> Hồ sơ của tôi
+                  </Link>
+                  <button onClick={handleLogout} className="logout-btn">
+                    <LogOut size={16} /> Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            // HIỂN THỊ KHI CHƯA ĐĂNG NHẬP
+            <Link to="/login" className="action-item hide-mobile">
+              <User size={22} />
+              <span>Tài khoản</span>
+            </Link>
+          )}
 
           <Link to="/cart" className="action-item cart-btn">
             <div className="icon-badge">
@@ -76,13 +123,25 @@ const Navbar = () => {
       {/* Mobile Sidebar */}
       <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
         <div className="sidebar-content">
+          {user && (
+             <div className="mobile-user-profile">
+                <p>Xin chào, <strong>{user.fullname}</strong></p>
+             </div>
+          )}
           <Link to="/products" className="sidebar-main-link" onClick={() => setIsMobileMenuOpen(false)}>TẤT CẢ SẢN PHẨM</Link>
           <hr className="sidebar-divider" />
           <Link to="/phone" onClick={() => setIsMobileMenuOpen(false)}>Điện thoại</Link>
           <Link to="/laptop" onClick={() => setIsMobileMenuOpen(false)}>Laptop</Link>
           <Link to="/accessories" onClick={() => setIsMobileMenuOpen(false)}>Phụ kiện</Link>
           <hr className="sidebar-divider" />
-          <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>Đăng nhập / Đăng ký</Link>
+          {user ? (
+            <>
+              <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>Hồ sơ của tôi</Link>
+              <span className="sidebar-logout" onClick={handleLogout}>Đăng xuất</span>
+            </>
+          ) : (
+            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>Đăng nhập / Đăng ký</Link>
+          )}
         </div>
       </div>
     </nav>

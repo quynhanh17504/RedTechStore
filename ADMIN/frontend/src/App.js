@@ -1,33 +1,39 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast'; // Đừng quên Toaster để hiện thông báo
 import Auth from './pages/Auth'; 
 import AdminDashboard from './pages/Dashboard'; 
 import UserManagement from './pages/UserManagement'; 
 import BrandManagement from './pages/BrandManagement';
 import ProductMangement from './pages/ProductManagement';
+import CategoryManagement from './pages/CategoryManagement';
 import './App.css';
+
+// Component bảo vệ Route (Chặn khách vãng lai)
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('adminToken');
+  return token ? children : <Navigate to="/admin/login" />;
+};
 
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" /> {/* Hiển thị thông báo Toast */}
+      
       <Routes>
-        {/* --- ROUTE CHO ADMIN --- */}
-        
         {/* 1. Trang đăng nhập */}
         <Route path="/admin/login" element={<Auth />} />
         
-        {/* 2. Trang chủ Dashboard - Tổng quan */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
-        {/* 3. Trang Quản lý tài khoản (Đã cập nhật) */}
-        <Route path="/admin/users" element={<UserManagement />} />
-        <Route path="/admin/products" element={<ProductMangement />} /> 
-        <Route path="/admin/categories" element={<AdminDashboard />} />
-        <Route path="/admin/orders" element={<AdminDashboard />} />
-        <Route path="/admin/brands" element={<BrandManagement />} />
-        <Route path="/admin/reviews" element={<AdminDashboard />} />
-
+        {/* Đổi tất cả path về /admin/... để đồng bộ */}
+        <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/admin/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
+        <Route path="/admin/products" element={<PrivateRoute><ProductMangement /></PrivateRoute>} /> 
+        <Route path="/admin/categories" element={<PrivateRoute><CategoryManagement /></PrivateRoute>} />
+        <Route path="/admin/orders" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/admin/brands" element={<PrivateRoute><BrandManagement /></PrivateRoute>} />
+        <Route path="/admin/reviews" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
         {/* --- ĐIỀU HƯỚNG MẶC ĐỊNH --- */}
-        
+        {/* Nếu vào trang chủ / thì tự chuyển về login */}
         <Route path="/" element={<Navigate to="/admin/login" />} />
         
         <Route path="*" element={
@@ -38,12 +44,7 @@ function App() {
           }}>
             <h1 style={{fontSize: '4rem', color: '#E10600'}}>404</h1>
             <h2>Oops! Trang bạn tìm kiếm không tồn tại</h2>
-            <p>Vui lòng kiểm tra lại đường dẫn hoặc quay về trang đăng nhập.</p>
-            <a href="/admin/login" style={{
-              color: '#E10600', 
-              fontWeight: 'bold', 
-              textDecoration: 'underline'
-            }}>Quay lại đăng nhập</a>
+            <a href="/admin/login" style={{color: '#E10600', fontWeight: 'bold'}}>Quay lại đăng nhập</a>
           </div>
         } />
       </Routes>

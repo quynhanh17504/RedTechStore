@@ -1,0 +1,64 @@
+/* Kế thừa các biến từ root chung */
+
+.total-badge {
+    background: #f1f5f9;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-weight: 700;
+    color: var(--secondary-color);
+    font-size: 0.85rem;
+}
+
+.action-edit-btn {
+    color: #2b6cb0;
+    background: #ebf8ff;
+    border: 1px solid #bee3f8;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.action-edit-btn:hover {
+    background: #2b6cb0;
+    color: white;
+}
+
+/* Style cho Modal nhỏ gọn */
+.brand-modal {
+    max-width: 400px;
+}
+
+/* Thống kê nhanh */
+.quick-stats {
+    margin-top: 15px;
+}
+.brand-tags-container {
+    max-width: 300px;
+}
+
+.brand-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #EBF8FF;
+    color: #2B6CB0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.brand-names-list {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Tạo dấu ... nếu danh sách thương hiệu quá dài */
+}
+
+.text-muted {
+    font-style: italic;
+    opacity: 0.6;
+}

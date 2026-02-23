@@ -1,13 +1,22 @@
 version: "3.1"
 
 rules:
+  - rule: Thực hiện tìm kiếm sản phẩm bất cứ khi nào có yêu cầu
+    steps:
+      - intent: tim_san_pham
+      - action: action_search_product
 
-- rule: Say goodbye anytime the user says goodbye
-  steps:
-  - intent: goodbye
-  - action: utter_goodbye
+  - rule: Thực hiện tìm sản phẩm mới
+    steps:
+      - intent: hoi_san_pham_moi
+      - action: action_search_product
 
-- rule: Say 'I am a bot' anytime the user challenges
-  steps:
-  - intent: bot_challenge
-  - action: utter_iamabot
+  - rule: Chào hỏi khách hàng
+    steps:
+      - intent: greet
+      - action: utter_greet
+
+  - rule: Phản hồi khi khách hỏi bot là ai
+    steps:
+      - intent: bot_challenge
+      - action: utter_iamabot

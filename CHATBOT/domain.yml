@@ -3,31 +3,57 @@ version: "3.1"
 intents:
   - greet
   - goodbye
-  - affirm
-  - deny
-  - mood_great
-  - mood_unhappy
+  - tim_san_pham
+  - hoi_san_pham_moi
   - bot_challenge
+
+entities:
+  - category
+  - brand
+  - product_name
+  - filter_new
+
+slots:
+  category:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: category
+  brand:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: brand
+  product_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: product_name
+  filter_new:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: filter_new
 
 responses:
   utter_greet:
-  - text: "Hey! How are you?"
-
-  utter_cheer_up:
-  - text: "Here is something to cheer you up:"
-    image: "https://i.imgur.com/nGF1K8f.jpg"
-
-  utter_did_that_help:
-  - text: "Did that help you?"
-
-  utter_happy:
-  - text: "Great, carry on!"
-
+    - text: "Chào bạn! Mình là RT Bot 🤖. Bạn muốn tìm sản phẩm, thương hiệu hay xem các mẫu mới nhất tại RedTech Store?"
+  
   utter_goodbye:
-  - text: "Bye"
+    - text: "Tạm biệt! Hy vọng bạn đã chọn được món đồ công nghệ ưng ý. Hẹn gặp lại!"
 
   utter_iamabot:
-  - text: "I am a bot, powered by Rasa."
+    - text: "Mình là RT Bot, trợ lý ảo thông minh của RedTech Store. Mình có thể giúp bạn tìm kiếm sản phẩm nhanh chóng!"
+
+  utter_default:
+    - text: "Xin lỗi, RT Bot chưa hiểu ý bạn. Bạn có thể thử hỏi: 'Tìm iPhone 15' hoặc 'Laptop Dell mới nhất' được không?"
+
+actions:
+  - action_search_product
 
 session_config:
   session_expiration_time: 60

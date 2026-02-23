@@ -1,30 +1,24 @@
 version: "3.1"
 
 stories:
-
-- story: happy path
+- story: chào hỏi và tìm sản phẩm
   steps:
   - intent: greet
   - action: utter_greet
-  - intent: mood_great
-  - action: utter_happy
+  - intent: tim_san_pham
+  - action: action_search_product
 
-- story: sad path 1
+- story: tìm sản phẩm trực tiếp
   steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: mood_unhappy
-  - action: utter_cheer_up
-  - action: utter_did_that_help
-  - intent: affirm
-  - action: utter_happy
+  - intent: tim_san_pham
+  - action: action_search_product
 
-- story: sad path 2
+- story: hỏi sản phẩm mới nhất
   steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: mood_unhappy
-  - action: utter_cheer_up
-  - action: utter_did_that_help
-  - intent: deny
+  - intent: hoi_san_pham_moi
+  - action: action_search_product
+
+- story: khách hàng tạm biệt
+  steps:
+  - intent: goodbye
   - action: utter_goodbye

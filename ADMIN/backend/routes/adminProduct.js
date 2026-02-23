@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const upload = require('../cloudinary');
 
+// 1. Lấy danh sách sản phẩm
 router.get('/', async (req, res) => {
     try {
         const query = `
@@ -19,17 +20,13 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. Thêm sản phẩm kèm Upload ảnh
+// 2. Thêm sản phẩm
 router.post('/add', upload.array('images', 4), async (req, res) => {
     try {
         const { name, price, category_id, brand_id, stock, description, specifications } = req.body;
-
-        // Xử lý mảng ảnh
-        let imagesData = ""; 
+        let imagesData = "[]"; 
         if (req.files && req.files.length > 0) {
-            // Lấy toàn bộ link .path của tất cả file đã upload thành công
             const imageUrls = req.files.map(file => file.path);
-            // Chuyển mảng [url1, url2...] thành chuỗi JSON để lưu vào cột TEXT
             imagesData = JSON.stringify(imageUrls);
         }
 
@@ -37,24 +34,42 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await db.execute(sql, [
-            name, 
-            description || "", 
-            parseFloat(price), 
-            parseInt(stock), 
-            imagesData, // Lưu chuỗi mảng ảnh JSON vào đây
-            parseInt(category_id) || null, 
-            parseInt(brand_id) || null,
-            specifications || null 
+            name, description || "", parseFloat(price), parseInt(stock), 
+            imagesData, parseInt(category_id) || null, parseInt(brand_id) || null, specifications || null 
         ]);
 
-        res.status(201).json({ message: "Thêm sản phẩm thành công với đầy đủ ảnh" });
+        res.status(201).json({ message: "Thêm sản phẩm thành công" });
     } catch (err) {
-        console.error("Lỗi thực thi SQL:", err.message);
-        res.status(500).json({ error: "Lỗi cơ sở dữ liệu: " + err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 3. Xóa sản phẩm
+// 3. Cập nhật sản phẩm (BỔ SUNG ĐỂ SỬA LỖI 404 KHI UPDATE)
+router.put('/update/:id', upload.array('images', 4), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, price, category_id, brand_id, stock, description, specifications, existingImages } = req.body;
+
+        // Xử lý ảnh: Kết hợp ảnh cũ giữ lại và ảnh mới upload
+        let finalImages = JSON.parse(existingImages || "[]");
+        if (req.files && req.files.length > 0) {
+            const newImageUrls = req.files.map(file => file.path);
+            finalImages = [...finalImages, ...newImageUrls];
+        }
+
+        const sql = `UPDATE products SET name=?, description=?, price=?, stock=?, image=?, category_id=?, brand_id=?, specifications=? WHERE id=?`;
+        await db.execute(sql, [
+            name, description, parseFloat(price), parseInt(stock), 
+            JSON.stringify(finalImages), parseInt(category_id), parseInt(brand_id), specifications, id
+        ]);
+
+        res.json({ message: "Cập nhật thành công" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. Xóa sản phẩm
 router.delete('/delete/:id', async (req, res) => {
     try {
         await db.execute('DELETE FROM products WHERE id = ?', [req.params.id]);

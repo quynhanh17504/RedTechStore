@@ -397,3 +397,39 @@
   .p-actions-v2 { grid-template-columns: 1fr; }
   .product-reviews-section { padding: 25px; }
 }
+
+/* --- PHẦN MÔ TẢ NGẮN (Nằm dưới tên/giá sản phẩm) --- */
+.p-description-short {
+    margin: 25px 0;
+    padding: 15px 20px;
+    background-color: #f9f9f9; /* Màu nền nhẹ để tách biệt thông tin */
+    border-left: 4px solid var(--primary-color); /* Thanh màu đỏ đặc trưng của RedTech */
+    border-radius: 4px 12px 12px 4px;
+    line-height: 1.6;
+    color: var(--text-light); /* Màu chữ nhẹ hơn tiêu đề một chút */
+    font-size: 0.95rem;
+    font-style: italic; /* Tạo sự khác biệt với các phần văn bản khác */
+}
+
+.p-description-short p {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hiệu ứng hover nhẹ */
+.p-description-short:hover {
+    background-color: #fff1f0; /* Chuyển sang tông đỏ cực nhạt khi hover */
+    transition: background-color 0.3s ease;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 600px) {
+    .p-description-short {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+        margin: 15px 0;
+    }
+}

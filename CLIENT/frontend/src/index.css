@@ -37,6 +37,15 @@
 
   /* --- CHUYỂN ĐỘNG (Animations) --- */
   --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --chat-red: #E10600;
+    --chat-bg: #ffffff;
+    --chat-user-bg: #f0f0f0;
+    --chat-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    --rt-primary: #E10600;
+    --rt-dark: #1a1a1a;
+    --rt-gray: #f8f9fa;
+    --rt-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 /* --- THIẾT LẬP CƠ BẢN (Base Styles) --- */

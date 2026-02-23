@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X, ChevronDown, Laptop, Smartphone, Headphones, LayoutGrid, LogOut, Settings } from 'lucide-react';
+import axios from 'axios'; // Thêm axios
 import toast from 'react-hot-toast';
 import './Navbar.css';
 
@@ -8,36 +9,60 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // Dropdown tài khoản
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
+  const [cartCount, setCartCount] = useState(0); // State lưu số lượng giỏ hàng
 
-  // Kiểm tra trạng thái đăng nhập
+  // 1. Lấy thông tin user và số lượng giỏ hàng ban đầu
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchCartCount(parsedUser.id);
     }
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
+
+    // Lắng nghe sự kiện storage hoặc custom event để cập nhật badge ngay lập tức
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('cartUpdated', () => {
+       if (storedUser) fetchCartCount(JSON.parse(storedUser).id);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('cartUpdated', () => {});
+    };
   }, []);
 
-  // Hàm Đăng xuất
+  // 2. Hàm gọi API lấy tổng số lượng sản phẩm trong giỏ
+  const fetchCartCount = async (userId) => {
+    try {
+      const res = await axios.get(`http://localhost:3005/client/cart/${userId}`);
+      // Tính tổng quantity của tất cả item trong giỏ
+      const total = res.data.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(total);
+    } catch (err) {
+      console.error("Lỗi lấy count giỏ hàng:", err);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setCartCount(0); // Reset count về 0
     toast.success('Đã đăng xuất tài khoản');
     navigate('/login');
     setIsUserMenuOpen(false);
   };
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`} style={{ fontFamily: 'Cabin, sans-serif' }}>
       <div className="container nav-container">
         
         {/* Mobile Menu Button */}
@@ -79,11 +104,10 @@ const Navbar = () => {
         {/* Actions */}
         <div className="nav-actions">
           {user ? (
-            // HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP
             <div className="nav-user-dropdown">
               <button className="action-item user-active-btn" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
                 <User size={22} />
-                <span className="user-name">{user.fullname.split(' ').pop()}</span>
+                <span className="user-name">{user.fullname?.split(' ').pop()}</span>
                 <ChevronDown size={14} />
               </button>
 
@@ -104,17 +128,17 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            // HIỂN THỊ KHI CHƯA ĐĂNG NHẬP
             <Link to="/login" className="action-item hide-mobile">
               <User size={22} />
               <span>Tài khoản</span>
             </Link>
           )}
 
+          {/* CẬP NHẬT BADGE GIỎ HÀNG */}
           <Link to="/cart" className="action-item cart-btn">
             <div className="icon-badge">
               <ShoppingCart size={22} />
-              <span className="badge">0</span>
+              {cartCount > 0 && <span className="badge">{cartCount}</span>}
             </div>
           </Link>
         </div>

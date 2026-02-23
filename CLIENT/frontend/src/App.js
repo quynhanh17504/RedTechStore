@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Chatbot from './components/Chatbot'; // 1. Import Chatbot
 
 // Pages
 import Home from './pages/Home';
@@ -13,6 +14,7 @@ import Cart from './pages/Cart';
 import Auth from './pages/Auth';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
+import EditProfile from './pages/EditProfile'; 
 import './App.css';
 
 function App() {
@@ -23,13 +25,13 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <Router>
         <div className="app-wrapper">
-          {/* Cấu hình Toaster để hiển thị thông báo đẹp mắt */}
+          {/* Cấu hình Toaster */}
           <Toaster 
             position="top-center" 
             reverseOrder={false} 
             toastOptions={{
               style: {
-                fontFamily: 'Cabin, sans-serif', // Sử dụng font Cabin như yêu cầu
+                fontFamily: 'Cabin, sans-serif', 
                 fontSize: '14px',
                 borderRadius: '8px',
               }
@@ -46,8 +48,11 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/category/:categoryId" element={<Products />} />
+              <Route path="/profile" element={<EditProfile />} />
             </Routes>
           </main>
+
+          <Chatbot />
 
           <Footer />
         </div>

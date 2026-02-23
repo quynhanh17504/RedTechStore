@@ -4,20 +4,20 @@ const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = 'redtech_secret_key';
+
 // --- HELPER: Tạo JWT Token ---
 const generateToken = (user) => {
     return jwt.sign(
         { id: user.id, role: user.role }, 
-        'redtech_secret_key', 
+        JWT_SECRET, 
         { expiresIn: '1d' }
     );
 };
 
-// 1. API ĐĂNG KÝ (Thủ công)
+// 1. API ĐĂNG KÝ
 router.post('/register', async (req, res) => {
-    // Destructuring và gán giá trị mặc định là null cho các trường không bắt buộc
-    const { fullname, email, password, gender, phone = null, address = null } = req.body;
-    
+    const { fullname, email, password, gender } = req.body;
     try {
         const [userExists] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
         if (userExists.length > 0) return res.status(400).json({ message: "Email đã tồn tại!" });
@@ -25,20 +25,18 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Chèn vào DB. Các trường phone, address sẽ là NULL nếu không điền.
+        // Phone và Address mặc định là NULL theo cấu trúc bảng của bạn
         await db.execute(
-            'INSERT INTO users (fullname, email, password, gender, phone, address, role) VALUES (?, ?, ?, ?, ?, ?, "client")',
-            [fullname, email, hashedPassword, gender || 'Khác', phone, address]
+            'INSERT INTO users (fullname, email, password, gender, role) VALUES (?, ?, ?, ?, "client")',
+            [fullname, email, hashedPassword, gender || 'Khác']
         );
-        
         res.status(201).json({ message: "Đăng ký thành công!" });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ message: "Lỗi hệ thống", error: err.message });
     }
 });
 
-// 2. API ĐĂNG NHẬP (Thủ công)
+// 2. API ĐĂNG NHẬP
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -46,9 +44,8 @@ router.post('/login', async (req, res) => {
         if (users.length === 0) return res.status(400).json({ message: "Email không tồn tại!" });
 
         const user = users[0];
-        // Nếu user này đăng ký qua Google và chưa đặt mật khẩu
         if (user.password === 'google_authenticated') {
-            return res.status(400).json({ message: "Tài khoản này được đăng nhập bằng Google. Vui lòng chọn 'Đăng nhập bằng Google'." });
+            return res.status(400).json({ message: "Tài khoản này dùng Google. Hãy chọn 'Đăng nhập bằng Google'." });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -61,40 +58,50 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 3. API ĐĂNG NHẬP GOOGLE (Cập nhật để không lỗi)
-router.post('/google-login', async (req, res) => {
-    const { email, fullname, googleId } = req.body;
+// 3. API LẤY THÔNG TIN PROFILE Để hiện lên Form sửa)
+router.get('/profile/:id', async (req, res) => {
     try {
-        // Kiểm tra xem email đã tồn tại chưa
-        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-        let user;
+        // Lấy đúng các trường fullname, email từ bảng của bạn
+        const [users] = await db.execute('SELECT id, fullname, email, gender FROM users WHERE id = ?', [req.params.id]);
+        if (users.length === 0) return res.status(404).json({ message: "Không tìm thấy user" });
+        res.json(users[0]);
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server" });
+    }
+});
 
-        if (users.length > 0) {
-            // Trường hợp 1: User đã tồn tại -> Chỉ cần lấy thông tin để đăng nhập
-            user = users[0];
-        } else {
-            // Trường hợp 2: User chưa tồn tại -> Tự động tạo tài khoản mới (Auto-register)
-            // Password để giá trị đặc biệt để đánh dấu là user Google
-            const [result] = await db.execute(
-                'INSERT INTO users (fullname, email, password, role) VALUES (?, ?, ?, "client")',
-                [fullname, email, 'google_authenticated']
-            );
-            
-            // Lấy lại thông tin user vừa insert
-            const [newUser] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
-            user = newUser[0];
+// 4. API CẬP NHẬT PROFILE (Đúng tên cột: fullname, email, password)
+router.put('/update-profile', async (req, res) => {
+    const { userId, fullName, email, currentPassword, newPassword } = req.body;
+
+    try {
+        const [users] = await db.execute('SELECT * FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) return res.status(404).json({ message: "User không tồn tại" });
+        const user = users[0];
+
+        // Nếu thay đổi thông tin nhạy cảm, check mật khẩu cũ (trừ user Google)
+        if (user.password !== 'google_authenticated' && (newPassword || email !== user.email)) {
+            if (!currentPassword) return res.status(400).json({ message: "Vui lòng nhập mật khẩu cũ" });
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) return res.status(400).json({ message: "Mật khẩu cũ không chính xác" });
         }
 
-        // Tạo token như bình thường
-        const token = generateToken(user);
+        let finalPassword = user.password;
+        if (newPassword) {
+            const salt = await bcrypt.genSalt(10);
+            finalPassword = await bcrypt.hash(newPassword, salt);
+        }
 
-        res.json({
-            token,
-            user: { id: user.id, fullname: user.fullname, role: user.role, email: user.email }
-        });
+        // Thực hiện Update vào đúng các cột fullname, email, password
+        await db.execute(
+            'UPDATE users SET fullname = ?, email = ?, password = ? WHERE id = ?',
+            [fullName, email, finalPassword, userId]
+        );
+
+        res.json({ message: "Cập nhật dữ liệu thành công!" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Lỗi xử lý đăng nhập Google", error: err.message });
+        res.status(500).json({ message: "Lỗi khi cập nhật dữ liệu" });
     }
 });
 

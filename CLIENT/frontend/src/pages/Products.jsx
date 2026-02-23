@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Thêm useParams và useNavigate
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Thêm useLocation
 import axios from 'axios';
-import { Smartphone, Laptop, Headphones, FilterX, LayoutGrid } from 'lucide-react';
+import { Smartphone, Laptop, Headphones, FilterX, LayoutGrid, Search } from 'lucide-react';
 import ProductCard from '../components/ProductCard'; 
 import './Products.css';
 
 const Products = () => {
-  const { categoryId } = useParams(); // Lấy ID từ URL (ví dụ: /category/1)
+  const { categoryId } = useParams();
   const navigate = useNavigate();
+  
+  // 1. Lấy từ khóa tìm kiếm từ URL (?search=...)
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const searchQuery = searchParams.get('search');
 
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -15,12 +20,10 @@ const Products = () => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Khởi tạo state từ categoryId của URL nếu có
   const [activeCategory, setActiveCategory] = useState(categoryId || 'all');
   const [activeBrand, setActiveBrand] = useState('all');
   const [sortType, setSortType] = useState('default');
 
-  // Hàm helper render icon
   const getCategoryIcon = (name) => {
     const iconSize = 18;
     switch (name?.toLowerCase()) {
@@ -35,12 +38,16 @@ const Products = () => {
     }
   };
 
-  // 1. Fetch dữ liệu ban đầu
+  // 2. Fetch dữ liệu có hỗ trợ search query từ Backend
   useEffect(() => {
     const fetchAllData = async () => {
+      setLoading(true);
       try {
         const [prodRes, catRes, brandRes] = await Promise.all([
-          axios.get('http://localhost:3005/client/products'),
+          // Gửi kèm tham số search lên API
+          axios.get('http://localhost:3005/client/products', {
+            params: { search: searchQuery }
+          }),
           axios.get('http://localhost:3005/client/categories'),
           axios.get('http://localhost:3005/client/brands')
         ]);
@@ -55,18 +62,13 @@ const Products = () => {
       }
     };
     fetchAllData();
-  }, []);
+  }, [searchQuery]); // Chạy lại khi từ khóa tìm kiếm thay đổi
 
-  // 2. Cập nhật activeCategory khi URL thay đổi (VD: đang ở trang này mà nhấn Menu khác)
   useEffect(() => {
-    if (categoryId) {
-      setActiveCategory(String(categoryId));
-    } else {
-      setActiveCategory('all');
-    }
+    setActiveCategory(categoryId ? String(categoryId) : 'all');
   }, [categoryId]);
 
-  // 3. Logic Lọc và Sắp xếp
+  // 3. Logic Lọc Local (Kết hợp giữa Search + Category + Brand)
   useEffect(() => {
     let result = [...products];
 
@@ -83,13 +85,10 @@ const Products = () => {
     setFilteredProducts(result);
   }, [activeCategory, activeBrand, sortType, products]);
 
-  // Hàm xử lý khi click vào nút danh mục ở Sidebar
   const handleCategoryClick = (id) => {
-    if (id === 'all') {
-      navigate('/products');
-    } else {
-      navigate(`/category/${id}`);
-    }
+    // Khi đổi category, nếu đang có search query thì ta nên xóa nó đi hoặc giữ lại tùy UX
+    const path = id === 'all' ? '/products' : `/category/${id}`;
+    navigate(path);
   };
 
   if (loading) return <div className="redtech-loader-full">Đang kết nối database...</div>;
@@ -99,12 +98,15 @@ const Products = () => {
       <div className="container">
         <div className="products-header">
           <div className="header-info">
-            {/* Tiêu đề động dựa trên danh mục đang chọn */}
             <h1>
-              {activeCategory === 'all' 
-                ? 'TẤT CẢ ' 
-                : categories.find(c => String(c.id) === activeCategory)?.name.toUpperCase() + ' ' 
-              }
+              {/* Hiển thị trạng thái tìm kiếm hoặc danh mục */}
+              {searchQuery ? (
+                <>KẾT QUẢ CHO: <span className="query-text">"{searchQuery}"</span></>
+              ) : activeCategory === 'all' ? (
+                'TẤT CẢ '
+              ) : (
+                categories.find(c => String(c.id) === activeCategory)?.name.toUpperCase() + ' '
+              )}
               <span>SẢN PHẨM</span>
             </h1>
             <p>Tìm thấy {filteredProducts.length} sản phẩm</p>
@@ -129,7 +131,6 @@ const Products = () => {
                 >
                   <LayoutGrid size={18} /> Tất cả
                 </button>
-                
                 {categories.map(cat => (
                   <button 
                     key={cat.id} 
@@ -167,9 +168,11 @@ const Products = () => {
               </div>
             ) : (
               <div className="no-products">
-                <FilterX size={48} />
-                <p>Không có sản phẩm nào phù hợp.</p>
-                <button onClick={() => {navigate('/products'); setActiveBrand('all')}}>Xóa lọc</button>
+                {searchQuery ? <Search size={48} opacity={0.5} /> : <FilterX size={48} />}
+                <p>Rất tiếc, không tìm thấy sản phẩm phù hợp.</p>
+                <button onClick={() => {navigate('/products'); setActiveBrand('all'); setActiveCategory('all')}}>
+                  Quay lại cửa hàng
+                </button>
               </div>
             )}
           </main>

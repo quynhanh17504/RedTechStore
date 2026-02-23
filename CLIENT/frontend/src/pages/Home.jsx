@@ -114,10 +114,10 @@ const Home = () => {
 
           return (
             <section key={cat.id} className="container category-section">
-              <div className="section-header">
-                <div className="title-group">
-                  <h2 className="section-title">{cat.name}</h2>
-                  <div className="title-underline"></div>
+              <div className="section-header-v2">
+                <div className="title-group-v2">
+                  <h2 className="section-title-v2">{cat.name}</h2>
+                  <div className="title-underline-v2"></div>
                 </div>
                 <button 
                   className="view-all-glass" 

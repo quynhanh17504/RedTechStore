@@ -77,20 +77,20 @@
   padding: 60px 20px;
 }
 
-.section-header {
+.section-header-v2 {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 40px;
 }
 
-.section-title {
+.section-title-v2 {
   font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: -1px;
 }
 
-.title-underline {
+.title-underline-v2 {
   width: 60px;
   height: 4px;
   background: var(--primary-color);

@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const axios = require('axios'); // Thêm axios để gọi Google API từ Backend
 const JWT_SECRET = 'redtech_secret_key';
 
 // --- HELPER: Tạo JWT Token ---
@@ -102,6 +102,56 @@ router.put('/update-profile', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Lỗi khi cập nhật dữ liệu" });
+    }
+});
+
+// 5. API ĐĂNG NHẬP BẰNG GOOGLE
+router.post('/google-login', async (req, res) => {
+    const { email, fullname } = req.body; 
+
+    try {
+        if (!email) {
+            return res.status(400).json({ message: "Thiếu thông tin email từ Google" });
+        }
+
+        // 1. Kiểm tra user đã tồn tại trong DB chưa
+        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+        let user;
+
+        if (users.length === 0) {
+            // 2. Nếu chưa có, tạo user mới
+            // Mật khẩu để mặc định là 'google_authenticated' để đánh dấu
+            const [result] = await db.execute(
+                'INSERT INTO users (fullname, email, password, role, gender) VALUES (?, ?, ?, "client", "Khác")',
+                [fullname, email, 'google_authenticated']
+            );
+            
+            const [newUser] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+            user = newUser[0];
+        } else {
+            user = users[0];
+            
+            // Cập nhật lại tên nếu user thay đổi tên trên Google (tùy chọn)
+            await db.execute('UPDATE users SET fullname = ? WHERE id = ?', [fullname, user.id]);
+        }
+
+        // 3. Tạo JWT nội bộ của RedTech
+        const sysToken = generateToken(user);
+
+        res.json({
+            message: "Đăng nhập Google thành công!",
+            token: sysToken,
+            user: {
+                id: user.id,
+                fullname: user.fullname,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (err) {
+        console.error("Lỗi xử lý Google Login tại Backend:", err);
+        res.status(500).json({ message: "Lỗi hệ thống khi xử lý đăng nhập Google" });
     }
 });
 

@@ -33,7 +33,7 @@ const Home = () => {
           axios.get('http://localhost:3005/client/products'),
           axios.get('http://localhost:3005/client/categories')
         ]);
-        
+
         setProducts(prodRes.data);
         setCategories(catRes.data);
       } catch (err) {
@@ -67,10 +67,10 @@ const Home = () => {
         >
           {banners.map(b => (
             <SwiperSlide key={b.id}>
-              <div 
-                className="slide-item" 
+              <div
+                className="slide-item"
                 style={{ backgroundImage: `url(${b.img})` }}
-                onClick={() => navigate('/products')} 
+                onClick={() => navigate('/products')}
               ></div>
             </SwiperSlide>
           ))}
@@ -82,19 +82,19 @@ const Home = () => {
         <section className="features-glass-bar">
           <div className="container features-inner">
             <div className="f-item">
-              <ShieldCheck size={24} /> 
+              <ShieldCheck size={24} />
               <div className="f-text">
                 <strong>Bảo hành 24 tháng</strong>
               </div>
             </div>
             <div className="f-item">
-              <Zap size={24} /> 
+              <Zap size={24} />
               <div className="f-text">
                 <strong>Giao nhanh toàn quốc</strong>
               </div>
             </div>
             <div className="f-item">
-              <Headphones size={24} /> 
+              <Headphones size={24} />
               <div className="f-text">
                 <strong>Hỗ trợ kỹ thuật 24/7</strong>
               </div>
@@ -119,14 +119,14 @@ const Home = () => {
                   <h2 className="section-title-v2">{cat.name}</h2>
                   <div className="title-underline-v2"></div>
                 </div>
-                <button 
-                  className="view-all-glass" 
+                <button
+                  className="view-all-glass"
                   onClick={() => navigate(`/category/${cat.id}`)}
                 >
                   Xem tất cả <ChevronRight size={18} />
                 </button>
               </div>
-              
+
               <div className="product-grid">
                 {catProducts.map(product => (
                   <ProductCard key={product.id} product={product} />

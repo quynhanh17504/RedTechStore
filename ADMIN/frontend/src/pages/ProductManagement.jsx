@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { 
-  Search, Plus, Trash2, Edit3, X, Upload, Package, AlertTriangle, 
-  Layers, Tag, Cpu, Monitor, Battery, HardDrive, RotateCcw 
+import {
+  Search, Plus, Trash2, Edit3, X, Upload, Package, AlertTriangle,
+  Layers, Tag, Cpu, Monitor, Battery, HardDrive, RotateCcw, Smartphone, Tablet, Camera
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './ProductManagement.css';
 
+// Map icon để render chuẩn dựa trên string lưu trong attributes_json của danh mục
+const ICON_MAP = {
+  monitor: <Monitor size={14} />,
+  cpu: <Cpu size={14} />,
+  battery: <Battery size={14} />,
+  harddrive: <HardDrive size={14} />,
+  smartphone: <Smartphone size={14} />,
+  tablet: <Tablet size={14} />,
+  camera: <Camera size={14} />
+};
+
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  
+
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
@@ -21,18 +32,20 @@ const ProductManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
-  
+
   // Form State
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [specs, setSpecs] = useState({});
+  const [specs, setSpecs] = useState({}); // Lưu giá trị thông số của sản phẩm: {ram: "8GB", cpu: "i5"}
+  const [currentCategorySpecs, setCurrentCategorySpecs] = useState([]); // Lưu cấu hình các trường specs của danh mục được chọn
+
   const [priceValue, setPriceValue] = useState("");
   const [stockValue, setStockValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Image State
-  const [selectedFiles, setSelectedFiles] = useState([]); 
-  const [previews, setPreviews] = useState([]); 
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   // Filters
   const [filterCategory, setFilterCategory] = useState("");
@@ -57,6 +70,24 @@ const ProductManagement = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Tự động load cấu hình thông số (Specs) khi đổi danh mục
+  useEffect(() => {
+    if (selectedCategory) {
+      const category = categories.find(c => c.id.toString() === selectedCategory.toString());
+      if (category && category.attributes_json) {
+        try {
+          setCurrentCategorySpecs(JSON.parse(category.attributes_json));
+        } catch (e) {
+          setCurrentCategorySpecs([]);
+        }
+      } else {
+        setCurrentCategorySpecs([]);
+      }
+    } else {
+      setCurrentCategorySpecs([]);
+    }
+  }, [selectedCategory, categories]);
+
   // --- LOGIC XỬ LÝ ẢNH ---
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -71,31 +102,23 @@ const ProductManagement = () => {
   };
 
   const removeFile = (index) => {
-  const urlToRemove = previews[index];
-  
-  // Nếu là ảnh mới chọn, giải phóng bộ nhớ
-  if (urlToRemove.startsWith('blob:')) {
-    URL.revokeObjectURL(urlToRemove);
-    // Lọc bỏ file tương ứng trong selectedFiles
-    const blobIndex = previews.slice(0, index).filter(p => p.startsWith('blob:')).length;
-    setSelectedFiles(prev => prev.filter((_, i) => i !== blobIndex));
-  }
+    const urlToRemove = previews[index];
+    if (urlToRemove.startsWith('blob:')) {
+      URL.revokeObjectURL(urlToRemove);
+      const blobIndex = previews.slice(0, index).filter(p => p.startsWith('blob:')).length;
+      setSelectedFiles(prev => prev.filter((_, i) => i !== blobIndex));
+    }
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
-  setPreviews(prev => prev.filter((_, i) => i !== index));
-};
-
-  // Hàm thay đổi vị trí ảnh (Swap vị trí trong mảng)
   const moveFile = (index, direction) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= previews.length) return;
-
     const updatedPreviews = [...previews];
-    // Tráo đổi vị trí
     [updatedPreviews[index], updatedPreviews[newIndex]] = [updatedPreviews[newIndex], updatedPreviews[index]];
     setPreviews(updatedPreviews);
-    };
+  };
 
-  // --- LOGIC XÓA SẢN PHẨM ---
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
     const load = toast.loading("Đang xóa sản phẩm...");
@@ -104,13 +127,12 @@ const ProductManagement = () => {
       toast.success("Đã xóa sản phẩm thành công", { id: load });
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
-      fetchData(); // Tải lại danh sách
+      fetchData();
     } catch (err) {
-      toast.error("Lỗi khi xóa: " + (err.response?.data?.message || "Thao tác thất bại"), { id: load });
+      toast.error("Lỗi khi xóa", { id: load });
     }
   };
 
-  // --- LOGIC TÌM KIẾM & LỌC ---
   const filteredProducts = products
     .filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -129,61 +151,20 @@ const ProductManagement = () => {
   const currentProducts = filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-  const SPEC_CONFIG = {
-  "1": [ // Điện thoại
-
-      { label: "Màn hình", name: "screen", icon: <Monitor size={14}/> },
-
-      { label: "Camera sau", name: "back_camera" },
-
-      { label: "Camera trước", name: "front_camera" },
-
-      { label: "Chipset", name: "chipset", icon: <Cpu size={14}/> },
-
-      { label: "RAM / ROM", name: "ram_rom" },
-
-      { label: "Pin", name: "battery", icon: <Battery size={14}/> },
-
-      { label: "Hệ điều hành", name: "os" },
-
-      { label: "Độ phân giải", name: "resolution" }
-
-    ],
-
-    "2": [ // Laptop
-
-      { label: "CPU", name: "cpu", icon: <Cpu size={14}/> },
-
-      { label: "Card đồ họa", name: "gpu" },
-
-      { label: "RAM", name: "ram" },
-
-      { label: "SSD", name: "ssd", icon: <HardDrive size={14}/> },
-
-      { label: "Kích thước màn hình", name: "screen_size", icon: <Monitor size={14}/> },
-
-      { label: "Pin", name: "battery", icon: <Battery size={14}/> },
-
-      { label: "Trọng lượng", name: "weight" }
-
-    ]
-
-  };
-
   const openEditModal = (product) => {
     setEditingProduct(product);
     setSelectedCategory(product.category_id.toString());
     try {
       setSpecs(product.specifications ? JSON.parse(product.specifications) : {});
-      const imgs = product.image ? JSON.parse(product.image) : [product.image];
-      setPreviews(Array.isArray(imgs) ? imgs.filter(i => i) : [product.image]);
+      const imgs = product.image ? JSON.parse(product.image) : [];
+      setPreviews(Array.isArray(imgs) ? imgs : [product.image]);
     } catch (e) {
       setSpecs({});
       setPreviews([product.image]);
     }
     setPriceValue(parseInt(product.price).toLocaleString('en-US'));
     setStockValue(product.stock);
-    setSelectedFiles([]); 
+    setSelectedFiles([]);
     setIsModalOpen(true);
   };
 
@@ -217,7 +198,6 @@ const ProductManagement = () => {
     }
   };
 
-  
   return (
     <div className="admin-layout" style={{ fontFamily: 'Cabin, sans-serif' }}>
       <Sidebar />
@@ -234,21 +214,20 @@ const ProductManagement = () => {
           </button>
         </header>
 
-        {/* --- BỘ LỌC VỚI ICON REFRESH MỚI --- */}
         <section className="filter-section">
           <div className="filter-container">
             <div className="search-wrapper">
               <Search size={18} />
-              <input type="text" placeholder="Tìm kiếm..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} />
+              <input type="text" placeholder="Tìm kiếm..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} />
             </div>
             <div className="filter-group">
-              <select value={filterCategory} onChange={(e) => {setFilterCategory(e.target.value); setCurrentPage(1);}}>
+              <select value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}>
                 <option value="">Tất cả danh mục</option>
                 {categories.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}
               </select>
             </div>
             <div className="filter-group">
-              <select value={filterBrand} onChange={(e) => {setFilterBrand(e.target.value); setCurrentPage(1);}}>
+              <select value={filterBrand} onChange={(e) => { setFilterBrand(e.target.value); setCurrentPage(1); }}>
                 <option value="">Tất cả thương hiệu</option>
                 {brands.map(b => <option key={b.id} value={b.id.toString()}>{b.name}</option>)}
               </select>
@@ -261,7 +240,6 @@ const ProductManagement = () => {
                 <option value="stock-low">Tồn kho ít nhất</option>
               </select>
             </div>
-            {/* Đổi thành icon RotateCcw (Load lại) */}
             <button className="btn-reset-filter" onClick={() => {
               setSearchQuery(""); setFilterCategory(""); setFilterBrand(""); setSortBy("latest");
             }} title="Làm mới bộ lọc">
@@ -270,16 +248,15 @@ const ProductManagement = () => {
           </div>
         </section>
 
-        {/* --- DANH SÁCH SẢN PHẨM --- */}
         <div className="product-grid">
           {currentProducts.map(product => {
-             let displayImg = 'https://via.placeholder.com/200';
-             try {
-                const imgs = product.image ? JSON.parse(product.image) : [];
-                displayImg = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : product.image;
-             } catch(e) { displayImg = product.image; }
+            let displayImg = 'https://via.placeholder.com/200';
+            try {
+              const imgs = product.image ? JSON.parse(product.image) : [];
+              displayImg = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : product.image;
+            } catch (e) { displayImg = product.image; }
 
-             return (
+            return (
               <div className="product-card" key={product.id}>
                 <div className="card-image">
                   <img src={displayImg || 'https://via.placeholder.com/200'} alt={product.name} />
@@ -298,11 +275,10 @@ const ProductManagement = () => {
                   <button className="delete-btn" onClick={() => { setProductToDelete(product); setIsDeleteModalOpen(true); }}><Trash2 size={15} /> Xóa</button>
                 </div>
               </div>
-             )
+            )
           })}
         </div>
 
-        {/* --- PHÂN TRANG --- */}
         {totalPages > 1 && (
           <div className="pagination-container">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Trước</button>
@@ -313,22 +289,6 @@ const ProductManagement = () => {
           </div>
         )}
 
-        {/* --- MODAL XÓA --- */}
-        {isDeleteModalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-container delete-confirm-modal animate-scale-up">
-              <div className="delete-icon-wrapper"><AlertTriangle size={40} color="#E10600" /></div>
-              <h3>Xác nhận xóa?</h3>
-              <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>{productToDelete?.name}</strong>? Hành động này không thể hoàn tác.</p>
-              <div className="modal-footer">
-                <button className="btn-cancel" onClick={() => setIsDeleteModalOpen(false)}>Hủy bỏ</button>
-                <button className="btn-confirm-delete" onClick={handleDeleteProduct}>Xác nhận xóa</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- MODAL FORM THÊM/SỬA --- */}
         {isModalOpen && (
           <div className="modal-overlay">
             <div className="modal-container product-modal animate-slide-up">
@@ -337,47 +297,35 @@ const ProductManagement = () => {
                   <div className="header-icon-box"><Package color="#E10600" /></div>
                   <h3>{editingProduct ? "Cập nhật sản phẩm" : "Tạo sản phẩm mới"}</h3>
                 </div>
-                <button className="close-modal" onClick={() => setIsModalOpen(false)}><X size={20}/></button>
+                <button className="close-modal" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
               </div>
               <form className="modal-form" onSubmit={handleSubmit}>
                 <div className="form-main-content">
                   <div className="form-column-left">
                     <div className="upload-section">
                       <label>Hình ảnh (Tối đa 4)</label>
-                     <div className="upload-grid">
-                      <input type="file" id="p-images" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                      
-                      {previews.length < 4 && (
-                        <label htmlFor="p-images" className="upload-placeholder main">
-                          <Upload size={20} />
-                          <span>Thêm ảnh</span>
-                        </label>
-                      )}
-
-                      {previews.map((src, idx) => (
-                        <div key={idx} className={`preview-item animate-scale-up ${idx === 0 ? 'main-image-item' : ''}`}>
-                          <img src={src} alt="preview" />
-                          
-                          {/* Badge đánh dấu ảnh chính */}
-                          {idx === 0 && <div className="main-badge">Ảnh chính</div>}
-                          
-                          <div className="image-controls">
-                            {/* Nút di chuyển */}
-                            {idx > 0 && (
-                              <button type="button" onClick={() => moveFile(idx, -1)} className="control-btn" title="Chuyển lên đầu">
-                                <RotateCcw size={12} style={{ transform: 'rotate(90deg)' }} />
-                              </button>
-                            )}
-                            
-                            {/* Nút xóa */}
-                            <button type="button" className="control-btn delete" onClick={() => removeFile(idx)} title="Xóa ảnh">
-                              <X size={12} />
-                            </button>
+                      <div className="upload-grid">
+                        <input type="file" id="p-images" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                        {previews.length < 4 && (
+                          <label htmlFor="p-images" className="upload-placeholder main">
+                            <Upload size={20} />
+                            <span>Thêm ảnh</span>
+                          </label>
+                        )}
+                        {previews.map((src, idx) => (
+                          <div key={idx} className={`preview-item animate-scale-up ${idx === 0 ? 'main-image-item' : ''}`}>
+                            <img src={src} alt="preview" />
+                            {idx === 0 && <div className="main-badge">Ảnh chính</div>}
+                            <div className="image-controls">
+                              {idx > 0 && (
+                                <button type="button" onClick={() => moveFile(idx, -1)} className="control-btn"><RotateCcw size={12} style={{ transform: 'rotate(90deg)' }} /></button>
+                              )}
+                              <button type="button" className="control-btn delete" onClick={() => removeFile(idx)}><X size={12} /></button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
                       </div>
+                    </div>
                     <div className="form-group mt-3">
                       <label>Mô tả sản phẩm</label>
                       <textarea name="description" defaultValue={editingProduct?.description || ""} rows="10" placeholder="Mô tả chi tiết..." style={{ minHeight: '220px' }} />
@@ -414,14 +362,25 @@ const ProductManagement = () => {
                         <input type="number" value={stockValue} onChange={(e) => setStockValue(e.target.value)} required />
                       </div>
                     </div>
-                    {selectedCategory && SPEC_CONFIG[selectedCategory] && (
+
+                    {/* DYNAMIC SPECS: Render dựa trên cấu hình của danh mục được chọn */}
+                    {currentCategorySpecs.length > 0 && (
                       <div className="specs-section-container">
                         <div className="specs-title-badge"><AlertTriangle size={14} /> Thông số kỹ thuật</div>
                         <div className="specs-input-grid">
-                          {SPEC_CONFIG[selectedCategory].map((field) => (
-                            <div className="form-group" key={field.name}>
-                              <label>{field.icon} {field.label}</label>
-                              <input type="text" value={specs[field.name] || ""} onChange={(e) => setSpecs({...specs, [field.name]: e.target.value})} />
+                          {currentCategorySpecs.map((field) => (
+                            <div className="form-group" key={field.key}>
+                              <label>
+                                {/* Nếu field.icon trống, sẽ không hiện gì cả thay vì hiện Cpu mặc định */}
+                                {field.icon && ICON_MAP[field.icon] ? ICON_MAP[field.icon] : null}
+                                {field.label}
+                              </label>
+                              <input
+                                type="text"
+                                value={specs[field.key] || ""}
+                                onChange={(e) => setSpecs({ ...specs, [field.key]: e.target.value })}
+                                placeholder={`Nhập ${field.label.toLowerCase()}...`}
+                              />
                             </div>
                           ))}
                         </div>

@@ -62,3 +62,9 @@
     font-style: italic;
     opacity: 0.6;
 }
+
+.specs-input-grid label svg {
+    margin-right: 6px;
+    vertical-align: middle;
+    display: inline-block;
+}

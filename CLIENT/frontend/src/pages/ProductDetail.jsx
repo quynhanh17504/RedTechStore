@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import './ProductDetail.css';
 
+// 1. Import component Review (Đảm bảo đúng đường dẫn file của bạn)
+import ProductReviews from '../components/ProductReviews'; 
+
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -51,6 +54,8 @@ const ProductDetail = () => {
       }
     };
     fetchProduct();
+    // Cuộn lên đầu trang khi chuyển ID sản phẩm
+    window.scrollTo(0, 0);
   }, [id]);
 
   if (loading) return <div className="redtech-loader-full">Đang tải...</div>;
@@ -87,7 +92,7 @@ const ProductDetail = () => {
           {/* THÔNG TIN SẢN PHẨM */}
           <section className="detail-info-v2">
             <span className="brand-label">{product.brand_name}</span>
-            <h1 className="p-name">{product.name}</h1>
+            <h1 className="p-name-detail">{product.name}</h1>
             <div className="p-price-row">
               <h2 className="p-main-price">{Number(product.price).toLocaleString()}đ</h2>
               {product.stock > 0 ? <span className="stock-status">Còn hàng</span> : <span className="out-stock">Hết hàng</span>}
@@ -122,6 +127,11 @@ const ProductDetail = () => {
               </div>
             </div>
           </section>
+        </div>
+
+        {/* 2. CHÈN PHẦN REVIEW Ở ĐÂY (Cuối container) */}
+        <div className="product-reviews-section-wrapper" style={{ marginTop: '40px', borderTop: '1px solid #eee' }}>
+            <ProductReviews productId={id} />
         </div>
       </div>
     </div>

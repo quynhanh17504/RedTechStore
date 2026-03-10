@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Thêm
 import axios from 'axios';
 import { Smartphone, Laptop, Headphones, FilterX, LayoutGrid, Search } from 'lucide-react';
 import ProductCard from '../components/ProductCard'; 
+import ProductReviews from '../components/ProductReviews';
 import './Products.css';
 
 const Products = () => {

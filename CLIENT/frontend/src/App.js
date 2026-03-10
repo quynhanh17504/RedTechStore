@@ -15,6 +15,7 @@ import Auth from './pages/Auth';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import EditProfile from './pages/EditProfile'; 
+import Checkout from './pages/Checkout'; 
 import './App.css';
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
               <Route path="/login" element={<Auth />} />
               <Route path="/category/:categoryId" element={<Products />} />
               <Route path="/profile" element={<EditProfile />} />
+              <Route path="/checkout" element={<Checkout />} />
             </Routes>
           </main>
 

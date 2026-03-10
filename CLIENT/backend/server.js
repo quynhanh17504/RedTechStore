@@ -7,6 +7,7 @@ const productRoutes = require('./routes/product');
 const categoryRoutes = require('./routes/categories');
 const brandRoutes = require('./routes/brand');
 const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/oder'); 
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -16,6 +17,7 @@ app.use('/client/products', productRoutes);
 app.use('/client/categories', categoryRoutes);
 app.use('/client/brands', brandRoutes);
 app.use('/client/cart', cartRoutes);
+app.use('/client/order', orderRoutes);
 
 const PORT = 3005; 
 

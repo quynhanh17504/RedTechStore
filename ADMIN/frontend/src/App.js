@@ -7,6 +7,7 @@ import UserManagement from './pages/UserManagement';
 import BrandManagement from './pages/BrandManagement';
 import ProductMangement from './pages/ProductManagement';
 import CategoryManagement from './pages/CategoryManagement';
+import OrderManagement from './pages/OrderManagement';
 import './App.css';
 
 // Component bảo vệ Route (Chặn khách vãng lai)
@@ -29,7 +30,7 @@ function App() {
         <Route path="/admin/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
         <Route path="/admin/products" element={<PrivateRoute><ProductMangement /></PrivateRoute>} /> 
         <Route path="/admin/categories" element={<PrivateRoute><CategoryManagement /></PrivateRoute>} />
-        <Route path="/admin/orders" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/admin/orders" element={<PrivateRoute><OrderManagement /></PrivateRoute>} />
         <Route path="/admin/brands" element={<PrivateRoute><BrandManagement /></PrivateRoute>} />
         <Route path="/admin/reviews" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
         {/* --- ĐIỀU HƯỚNG MẶC ĐỊNH --- */}

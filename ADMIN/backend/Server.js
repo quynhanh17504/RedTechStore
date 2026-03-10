@@ -7,6 +7,7 @@ const adminBrands = require('./routes/adminBrands');
 const adminProducts = require('./routes/adminProduct');
 const adminAuth = require('./routes/adminAuth');
 const adminDashboard = require('./routes/adminDashboard');
+const adminOrders = require('./routes/adminOrders');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use('/admin/categories', adminCategories);
 app.use('/admin/brands', adminBrands);
 app.use('/admin/products', adminProducts);
 app.use('/admin/dashboard', adminDashboard);
+app.use('/admin/orders', adminOrders);
 const PORT = 5000; 
 
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import { 
-  Search, Eye, Trash2, CheckCircle, Clock, Truck, 
-  XCircle, FileSpreadsheet, Printer, Filter, CreditCard, User, MapPin 
+  Search, Eye, CheckCircle, Clock, Truck, 
+  XCircle, FileSpreadsheet, Printer, CreditCard, User, MapPin 
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -11,10 +11,18 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import './OrderManagement.css';
 
+// 1. Định nghĩa Mapping Trạng thái tập trung (Key là Tiếng Anh chuẩn)
+const STATUS_MAP = {
+  pending: { label: "Đang xử lý", class: "pending", icon: <Clock size={12}/> },
+  shipping: { label: "Đang giao", class: "processing", icon: <Truck size={12}/> },
+  delivered: { label: "Thành công", class: "success", icon: <CheckCircle size={12}/> },
+  cancelled: { label: "Đã hủy", class: "cancelled", icon: <XCircle size={12}/> }
+};
+
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState(null); // Lưu đơn hàng đang xem chi tiết
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const API_URL = 'http://localhost:5000/admin/orders';
@@ -30,72 +38,104 @@ const OrderManagement = () => {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // 1. Cập nhật trạng thái đơn hàng
-  const updateStatus = async (orderId, newStatus) => {
+  // 2. HÀM CẬP NHẬT TRẠNG THÁI (Lưu Tiếng Anh vào DB)
+  const updateStatus = async (orderId, newStatusKey) => {
     const loading = toast.loading("Đang cập nhật...");
     try {
-      await axios.put(`${API_URL}/update-status/${orderId}`, { status: newStatus });
+      await axios.put(`${API_URL}/update-status/${orderId}`, { status: newStatusKey });
+      
       toast.success("Trạng thái đã được cập nhật!", { id: loading });
-      fetchOrders();
-      if(selectedOrder) setIsModalOpen(false);
+      
+      // Cập nhật State cục bộ ngay lập tức để UI phản hồi nhanh mà không cần fetch lại
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatusKey } : o));
+      
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(prev => ({ ...prev, status: newStatusKey }));
+      }
     } catch (err) {
       toast.error("Lỗi cập nhật", { id: loading });
     }
   };
 
-  // 2. Xuất Excel tất cả đơn hàng
+  // 3. HÀM HIỂN THỊ BADGE (Xử lý thông minh: map cả dữ liệu Tiếng Việt cũ sang UI mới)
+  const getStatusBadge = (status) => {
+    if (!status) return <span className="status-pill default">N/A</span>;
+    
+    const s = status.toLowerCase();
+    
+    // Logic fallback: Nếu DB đang lưu tiếng Việt cũ, map nó về key tiếng Anh để lấy Style
+    let key = s;
+    if (s === 'đang xử lý') key = 'pending';
+    if (s === 'đã giao cho vận chuyển' || s === 'đang giao') key = 'shipping';
+    if (s === 'đã giao hàng thành công' || s === 'thành công') key = 'delivered';
+    if (s === 'đã hủy') key = 'cancelled';
+
+    const config = STATUS_MAP[key];
+
+    if (config) {
+      return (
+        <span className={`status-pill ${config.class}`}>
+          {config.icon} {config.label}
+        </span>
+      );
+    }
+
+    // Nếu không khớp bất kỳ key nào, hiển thị text gốc để tránh bị trắng màn hình
+    return <span className="status-pill default">{status}</span>;
+  };
+
   const exportExcel = () => {
-    const data = orders.map(o => ({
-      "Mã Đơn": `#${o.id}`,
-      "Khách hàng": o.fullname,
-      "Email": o.email,
-      "Tổng tiền": `${o.total_price.toLocaleString()}đ`,
-      "Thanh toán": o.payment_method,
-      "Trạng thái": o.status,
-      "Ngày đặt": new Date(o.created_at).toLocaleString('vi-VN')
-    }));
+    const data = orders.map(o => {
+      // Chuyển đổi status sang tiếng Việt khi xuất Excel
+      const s = o.status?.toLowerCase();
+      let statusText = o.status;
+      if (s === 'pending' || s === 'đang xử lý') statusText = "Đang xử lý";
+      if (s === 'shipping' || s === 'đang giao') statusText = "Đang giao";
+      if (s === 'delivered' || s === 'thành công') statusText = "Thành công";
+      if (s === 'cancelled' || s === 'đã hủy') statusText = "Đã hủy";
+
+      return {
+        "Mã Đơn": `#${o.id}`,
+        "Khách hàng": o.fullname,
+        "Tổng tiền": `${parseInt(o.total_price).toLocaleString('vi-VN')}đ`,
+        "Thanh toán": o.payment_method,
+        "Trạng thái": statusText,
+        "Ngày đặt": new Date(o.created_at).toLocaleString('vi-VN')
+      };
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Orders");
-    XLSX.writeFile(wb, "Danh_sach_don_hang_RedTech.xlsx");
+    XLSX.writeFile(wb, `RedTech_Orders_${new Date().toLocaleDateString()}.xlsx`);
   };
 
-  // 3. Xuất hóa đơn PDF cho đơn hàng lẻ
   const exportInvoice = (order) => {
     const doc = new jsPDF();
-    doc.addFont('https://fonts.gstatic.com/s/cabin/v18/rP2ip2xl1290gkUdV97O.ttf', 'Cabin', 'normal');
-    doc.setFont('Cabin');
-    
     doc.text(`HOA DON BAN HANG - REDTECH`, 20, 20);
     doc.text(`Ma don: #${order.id}`, 20, 30);
     doc.text(`Khach hang: ${order.fullname}`, 20, 40);
-    doc.text(`Ngay: ${new Date(order.created_at).toLocaleDateString()}`, 20, 50);
 
-    const tableData = order.products.map(p => [p.product_name, p.quantity, `${p.price.toLocaleString()}đ`]);
+    const tableData = order.products.map(p => [
+      p.product_name, 
+      p.quantity, 
+      `${parseInt(p.price).toLocaleString('vi-VN')}đ`, 
+      `${(parseInt(p.price) * p.quantity).toLocaleString('vi-VN')}đ`
+    ]);
+
     doc.autoTable({
-      startY: 60,
-      head: [['San pham', 'SL', 'Don gia']],
+      startY: 50,
+      head: [['San pham', 'SL', 'Don gia', 'Thanh tien']],
       body: tableData,
     });
 
-    doc.text(`Tong thanh toan: ${order.total_price.toLocaleString()}đ`, 20, doc.lastAutoTable.finalY + 10);
-    doc.save(`Hoa_don_${order.id}.pdf`);
+    doc.text(`Tong cong: ${parseInt(order.total_price).toLocaleString('vi-VN')}đ`, 20, doc.lastAutoTable.finalY + 10);
+    doc.save(`Invoice_RedTech_${order.id}.pdf`);
   };
 
   const filteredOrders = orders.filter(o => 
     o.fullname.toLowerCase().includes(searchTerm.toLowerCase()) || 
     o.id.toString().includes(searchTerm)
   );
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Chờ xử lý': return <span className="badge-warn"><Clock size={12}/> Chờ xử lý</span>;
-      case 'Đang giao': return <span className="badge-info"><Truck size={12}/> Đang giao</span>;
-      case 'Đã giao': return <span className="badge-success"><CheckCircle size={12}/> Đã giao</span>;
-      case 'Đã hủy': return <span className="badge-danger"><XCircle size={12}/> Đã hủy</span>;
-      default: return <span>{status}</span>;
-    }
-  };
 
   return (
     <div className="admin-layout" style={{ fontFamily: 'Cabin, sans-serif' }}>
@@ -132,27 +172,20 @@ const OrderManagement = () => {
                   <th>Khách hàng</th>
                   <th>Ngày đặt</th>
                   <th>Tổng tiền</th>
-                  <th>Thanh toán</th>
                   <th>Trạng thái</th>
-                  <th className="text-right">Chi tiết</th>
+                  <th className="text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td><strong>#{order.id}</strong></td>
-                    <td>
-                      <div className="user-info">
-                        <strong>{order.fullname}</strong>
-                        <span>{order.email}</span>
-                      </div>
-                    </td>
+                  <tr key={order.id} className="order-row">
+                    <td><span className="order-tag">#{order.id}</span></td>
+                    <td><strong>{order.fullname}</strong></td>
                     <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
-                    <td><strong className="price-text">{order.total_price.toLocaleString()}đ</strong></td>
-                    <td>{order.payment_method}</td>
+                    <td><strong className="price-primary">{parseInt(order.total_price).toLocaleString('vi-VN')}đ</strong></td>
                     <td>{getStatusBadge(order.status)}</td>
                     <td className="text-right">
-                      <button className="action-view-btn" onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}>
+                      <button className="btn-view-circle" onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}>
                         <Eye size={18} />
                       </button>
                     </td>
@@ -163,73 +196,80 @@ const OrderManagement = () => {
           </div>
         </div>
 
-        {/* Modal chi tiết đơn hàng */}
+        {/* Modal Chi tiết đơn hàng */}
         {isModalOpen && selectedOrder && (
           <div className="modal-overlay">
-            <div className="modal-container order-modal">
+            <div className="modal-container order-detail-modal">
               <div className="modal-header">
                 <h3>Chi tiết đơn hàng #{selectedOrder.id}</h3>
-                <button className="close-modal" onClick={() => setIsModalOpen(false)}><XCircle size={20} /></button>
+                <button className="btn-close-x" onClick={() => setIsModalOpen(false)}>
+                  <XCircle size={24} />
+                </button>
               </div>
               
               <div className="modal-body">
-                <div className="order-grid">
-                  <div className="info-section">
-                    <h4><User size={16}/> Thông tin người nhận</h4>
+                <div className="detail-grid">
+                  <div className="detail-card customer-card">
+                    <div className="card-label"><User size={14}/> Thông tin người nhận</div>
                     <p><strong>Họ tên:</strong> {selectedOrder.fullname}</p>
                     <p><strong>Số điện thoại:</strong> {selectedOrder.phone}</p>
-                    <p><strong>Địa chỉ:</strong> {selectedOrder.address}</p>
-                    <p><strong>Thanh toán:</strong> <CreditCard size={14}/> {selectedOrder.payment_method}</p>
+                    <p className="address"><strong>Địa chỉ:</strong> <MapPin size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.address}</p>
+                    <p><strong>Thanh toán:</strong> <CreditCard size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.payment_method}</p>
                   </div>
                   
-                  <div className="status-section">
-                    <h4>Trạng thái đơn hàng</h4>
+                  <div className="detail-card status-card">
+                    <div className="card-label">Cập nhật trạng thái</div>
                     <select 
+                      className="status-dropdown"
                       value={selectedOrder.status} 
                       onChange={(e) => updateStatus(selectedOrder.id, e.target.value)}
                     >
-                      <option value="Chờ xử lý">Chờ xử lý</option>
-                      <option value="Đang giao">Đang giao</option>
-                      <option value="Đã giao">Đã giao</option>
-                      <option value="Đã hủy">Đã hủy</option>
+                      {/* LƯU Ý: Value là Tiếng Anh để đồng bộ DB, 
+                         Text hiển thị là Tiếng Việt cho người dùng 
+                      */}
+                      <option value="pending">⏳ Đang xử lý</option>
+                      <option value="shipping">🚚 Đang giao hàng</option>
+                      <option value="delivered">✅ Thành công (Đã giao)</option>
+                      <option value="cancelled">❌ Đã hủy đơn</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="order-products-list">
-                  <h4>Sản phẩm đã đặt</h4>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Sản phẩm</th>
-                        <th>Giá</th>
-                        <th>SL</th>
-                        <th>Thành tiền</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedOrder.products.map((p, index) => (
-                        <tr key={index}>
-                          <td>{p.product_name}</td>
-                          <td>{p.price.toLocaleString()}đ</td>
-                          <td>{p.quantity}</td>
-                          <td>{(p.price * p.quantity).toLocaleString()}đ</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="order-total">
+                <div className="product-list-section">
+                  <h4 style={{marginBottom: '15px'}}>Sản phẩm đã đặt</h4>
+                  <div className="item-container">
+                    {selectedOrder.products.map((p, idx) => {
+                      let displayImg = 'https://via.placeholder.com/60';
+                      try {
+                        const imgs = p.image ? JSON.parse(p.image) : [];
+                        displayImg = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : p.image;
+                      } catch(e) { displayImg = p.image; }
+
+                      return (
+                        <div className="product-item-row" key={idx}>
+                          <img src={displayImg || 'https://via.placeholder.com/60'} alt={p.product_name} />
+                          <div className="p-info">
+                            <h5>{p.product_name}</h5>
+                            <small>Giá: {parseInt(p.price).toLocaleString('vi-VN')}đ</small>
+                          </div>
+                          <div className="p-qty">x{p.quantity}</div>
+                          <div className="p-subtotal">{(parseInt(p.price) * p.quantity).toLocaleString('vi-VN')}đ</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="order-total-bar">
                     <span>Tổng cộng:</span>
-                    <strong>{selectedOrder.total_price.toLocaleString()}đ</strong>
+                    <strong className="total-val">{parseInt(selectedOrder.total_price).toLocaleString('vi-VN')}đ</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <button className="btn-print" onClick={() => exportInvoice(selectedOrder)}>
+              <div className="modal-footer-btns">
+                <button className="btn-print-invoice" onClick={() => exportInvoice(selectedOrder)}>
                   <Printer size={18}/> In hóa đơn PDF
                 </button>
-                <button className="btn-close" onClick={() => setIsModalOpen(false)}>Đóng</button>
+                <button className="btn-close-modal" onClick={() => setIsModalOpen(false)}>Đóng</button>
               </div>
             </div>
           </div>

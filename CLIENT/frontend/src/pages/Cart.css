@@ -178,7 +178,7 @@
   display: inline-block;
 }
 
-.summary-row {
+.cart-summary-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 15px;
@@ -190,7 +190,7 @@
   font-weight: 700;
 }
 
-.total-row {
+.cart-total-row {
   margin-top: 20px;
   font-size: 1.3rem;
   font-weight: 800;

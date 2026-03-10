@@ -152,18 +152,18 @@ const Cart = () => {
 
                 <aside className="cart-summary">
                     <h3>TÓM TẮT ĐƠN HÀNG</h3>
-                    <div className="summary-row">
+                    <div className="cart-summary-row">
                         <span>Tạm tính</span>
                         <span>{subtotal.toLocaleString()}đ</span>
                     </div>
-                    <div className="summary-row">
+                    <div className="cart-summary-row">
                         <span>Vận chuyển</span>
                         <span className="free-shipping">Miễn phí</span>
                     </div>
                     <hr />
-                    <div className="summary-row total-row">
+                    <div className="cart-summary-row total-row">
                         <span>TỔNG CỘNG</span>
-                        <span className="grand-total">{total.toLocaleString()}đ</span>
+                        <span className="cart-grand-total">{total.toLocaleString()}đ</span>
                     </div>
                     
                     <Link to="/checkout" className="btn-checkout-link">

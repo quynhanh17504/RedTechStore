@@ -108,7 +108,6 @@ const Products = () => {
               ) : (
                 categories.find(c => String(c.id) === activeCategory)?.name.toUpperCase() + ' '
               )}
-              <span>SẢN PHẨM</span>
             </h1>
             <p>Tìm thấy {filteredProducts.length} sản phẩm</p>
           </div>

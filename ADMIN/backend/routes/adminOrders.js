@@ -5,7 +5,6 @@ const db = require('../db');
 // 1. Lấy danh sách tất cả đơn hàng (Kèm chi tiết sản phẩm)
 router.get('/', async (req, res) => {
     try {
-        // Query lấy thông tin order và thông tin user (email)
         const [orders] = await db.execute(`
             SELECT o.*, u.email 
             FROM orders o
@@ -13,7 +12,6 @@ router.get('/', async (req, res) => {
             ORDER BY o.created_at DESC
         `);
 
-        // Với mỗi order, lấy danh sách sản phẩm thuộc order đó
         const ordersWithProducts = await Promise.all(orders.map(async (order) => {
             const [products] = await db.execute(`
                 SELECT oi.*, p.name as product_name 
@@ -36,34 +34,34 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. Cập nhật trạng thái đơn hàng
+// 2. Cập nhật trạng thái đơn hàng (Đã đồng bộ với ảnh MySQL)
 router.put('/update-status/:id', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body; 
 
-    // Danh sách các key hợp lệ để đối chiếu
-    const validStatuses = ['pending', 'shipping', 'delivered', 'cancelled'];
+    // ĐỒNG BỘ: Danh sách này phải khớp 100% với các option trong ảnh MySQL của bạn
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
     if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: "Trạng thái không hợp lệ" });
     }
 
     try {
-        // 1. Cập nhật trạng thái
+        // 1. Cập nhật trạng thái chính
         const sql = `UPDATE orders SET status = ? WHERE id = ?`;
         await db.execute(sql, [status, id]);
         
-        // 2. Tự động cập nhật thanh toán nếu đã giao hàng
+        // 2. Logic tự động cập nhật thanh toán
+        // Lưu ý: Trong ảnh của bạn payment_status đang là 'paid' (viết thường), mình sẽ để 'paid' cho khớp
         if (status === 'delivered') {
-            await db.execute(`UPDATE orders SET payment_status = 'Paid' WHERE id = ?`, [id]);
+            await db.execute(`UPDATE orders SET payment_status = 'paid' WHERE id = ?`, [id]);
         }
 
-        // 3. QUAN TRỌNG: Trả về Object đầy đủ để Frontend không bị mất data
-        // Thay vì chỉ trả về status, ta trả về id và status để FE dễ map
         res.json({ 
             message: "Cập nhật thành công", 
             orderId: id,
-            newStatus: status 
+            newStatus: status,
+            newPaymentStatus: status === 'delivered' ? 'paid' : undefined
         });
     } catch (err) {
         console.error("Error updating status:", err);

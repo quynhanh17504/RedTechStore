@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import { 
   Search, Eye, CheckCircle, Clock, Truck, 
-  XCircle, FileSpreadsheet, Printer, CreditCard, User, MapPin 
+  XCircle, FileSpreadsheet, Printer, CreditCard, User, MapPin, Package 
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -11,10 +11,11 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import './OrderManagement.css';
 
-// 1. Định nghĩa Mapping Trạng thái tập trung (Key là Tiếng Anh chuẩn)
+// 1. Đồng bộ mapping 5 trạng thái khớp 100% với MySQL enum
 const STATUS_MAP = {
-  pending: { label: "Đang xử lý", class: "pending", icon: <Clock size={12}/> },
-  shipping: { label: "Đang giao", class: "processing", icon: <Truck size={12}/> },
+  pending: { label: "Chờ xử lý", class: "pending", icon: <Clock size={12}/> },
+  processing: { label: "Đang chuẩn bị", class: "processing", icon: <Package size={12}/> },
+  shipped: { label: "Đang giao", class: "shipping", icon: <Truck size={12}/> },
   delivered: { label: "Thành công", class: "success", icon: <CheckCircle size={12}/> },
   cancelled: { label: "Đã hủy", class: "cancelled", icon: <XCircle size={12}/> }
 };
@@ -25,7 +26,7 @@ const OrderManagement = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const API_URL = 'http://localhost:5000/admin/orders';
+const API_URL = 'http://localhost:5000/admin/orders';
 
   const fetchOrders = async () => {
     try {
@@ -38,36 +39,38 @@ const OrderManagement = () => {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // 2. HÀM CẬP NHẬT TRẠNG THÁI (Lưu Tiếng Anh vào DB)
+  // 2. CẬP NHẬT TRẠNG THÁI (Gửi key Tiếng Anh chuẩn xuống DB)
   const updateStatus = async (orderId, newStatusKey) => {
     const loading = toast.loading("Đang cập nhật...");
     try {
+      // Gọi API đúng route /update-status/:id
       await axios.put(`${API_URL}/update-status/${orderId}`, { status: newStatusKey });
       
       toast.success("Trạng thái đã được cập nhật!", { id: loading });
       
-      // Cập nhật State cục bộ ngay lập tức để UI phản hồi nhanh mà không cần fetch lại
+      // Cập nhật State cục bộ
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatusKey } : o));
       
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder(prev => ({ ...prev, status: newStatusKey }));
       }
     } catch (err) {
-      toast.error("Lỗi cập nhật", { id: loading });
+      toast.error(err.response?.data?.error || "Lỗi cập nhật", { id: loading });
     }
   };
 
-  // 3. HÀM HIỂN THỊ BADGE (Xử lý thông minh: map cả dữ liệu Tiếng Việt cũ sang UI mới)
+  // 3. HIỂN THỊ BADGE (Xử lý thông minh cho cả dữ liệu cũ/mới)
   const getStatusBadge = (status) => {
     if (!status) return <span className="status-pill default">N/A</span>;
     
     const s = status.toLowerCase();
     
-    // Logic fallback: Nếu DB đang lưu tiếng Việt cũ, map nó về key tiếng Anh để lấy Style
+    // Map ngược từ Tiếng Việt (nếu có dữ liệu cũ) về Key Tiếng Anh
     let key = s;
     if (s === 'đang xử lý') key = 'pending';
-    if (s === 'đã giao cho vận chuyển' || s === 'đang giao') key = 'shipping';
-    if (s === 'đã giao hàng thành công' || s === 'thành công') key = 'delivered';
+    if (s === 'đang chuẩn bị') key = 'processing';
+    if (s === 'đang giao' || s === 'đã giao cho vận chuyển') key = 'shipped';
+    if (s === 'thành công' || s === 'đã giao hàng thành công') key = 'delivered';
     if (s === 'đã hủy') key = 'cancelled';
 
     const config = STATUS_MAP[key];
@@ -80,19 +83,15 @@ const OrderManagement = () => {
       );
     }
 
-    // Nếu không khớp bất kỳ key nào, hiển thị text gốc để tránh bị trắng màn hình
     return <span className="status-pill default">{status}</span>;
   };
 
   const exportExcel = () => {
     const data = orders.map(o => {
-      // Chuyển đổi status sang tiếng Việt khi xuất Excel
       const s = o.status?.toLowerCase();
       let statusText = o.status;
-      if (s === 'pending' || s === 'đang xử lý') statusText = "Đang xử lý";
-      if (s === 'shipping' || s === 'đang giao') statusText = "Đang giao";
-      if (s === 'delivered' || s === 'thành công') statusText = "Thành công";
-      if (s === 'cancelled' || s === 'đã hủy') statusText = "Đã hủy";
+      // Chuyển sang Tiếng Việt khi xuất file cho đẹp
+      if (STATUS_MAP[s]) statusText = STATUS_MAP[s].label;
 
       return {
         "Mã Đơn": `#${o.id}`,
@@ -116,7 +115,7 @@ const OrderManagement = () => {
     doc.text(`Khach hang: ${order.fullname}`, 20, 40);
 
     const tableData = order.products.map(p => [
-      p.product_name, 
+      p.product_name || "Sản phẩm", 
       p.quantity, 
       `${parseInt(p.price).toLocaleString('vi-VN')}đ`, 
       `${(parseInt(p.price) * p.quantity).toLocaleString('vi-VN')}đ`
@@ -133,7 +132,7 @@ const OrderManagement = () => {
   };
 
   const filteredOrders = orders.filter(o => 
-    o.fullname.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    o.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     o.id.toString().includes(searchTerm)
   );
 
@@ -214,7 +213,7 @@ const OrderManagement = () => {
                     <p><strong>Họ tên:</strong> {selectedOrder.fullname}</p>
                     <p><strong>Số điện thoại:</strong> {selectedOrder.phone}</p>
                     <p className="address"><strong>Địa chỉ:</strong> <MapPin size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.address}</p>
-                    <p><strong>Thanh toán:</strong> <CreditCard size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.payment_method}</p>
+                    <p><strong>Thanh toán:</strong> <CreditCard size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.payment_method} ({selectedOrder.payment_status})</p>
                   </div>
                   
                   <div className="detail-card status-card">
@@ -224,13 +223,11 @@ const OrderManagement = () => {
                       value={selectedOrder.status} 
                       onChange={(e) => updateStatus(selectedOrder.id, e.target.value)}
                     >
-                      {/* LƯU Ý: Value là Tiếng Anh để đồng bộ DB, 
-                         Text hiển thị là Tiếng Việt cho người dùng 
-                      */}
-                      <option value="pending">⏳ Đang xử lý</option>
-                      <option value="shipping">🚚 Đang giao hàng</option>
-                      <option value="delivered">✅ Thành công (Đã giao)</option>
-                      <option value="cancelled">❌ Đã hủy đơn</option>
+                      <option value="pending">⏳ Chờ xử lý (Pending)</option>
+                      <option value="processing">📦 Đang chuẩn bị (Processing)</option>
+                      <option value="shipped">🚚 Đang giao hàng (Shipped)</option>
+                      <option value="delivered">✅ Thành công (Delivered)</option>
+                      <option value="cancelled">❌ Đã hủy đơn (Cancelled)</option>
                     </select>
                   </div>
                 </div>
@@ -238,7 +235,7 @@ const OrderManagement = () => {
                 <div className="product-list-section">
                   <h4 style={{marginBottom: '15px'}}>Sản phẩm đã đặt</h4>
                   <div className="item-container">
-                    {selectedOrder.products.map((p, idx) => {
+                    {selectedOrder.products && selectedOrder.products.map((p, idx) => {
                       let displayImg = 'https://via.placeholder.com/60';
                       try {
                         const imgs = p.image ? JSON.parse(p.image) : [];

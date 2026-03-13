@@ -4,7 +4,7 @@
 **Mã lớp học:** 0101xxxx7801  
 **Khoa:** Công nghệ thông tin - Học Viện Hàng Không Việt Nam  
 **Giảng viên hướng dẫn:** ThS. Nguyễn Hữu Hiệp  
-
+**Thời gian thực hiện dự án:** Tháng 12/2025 - Tháng 4/2026
 ---
 
 ## 📝 Đề Tài
@@ -23,7 +23,8 @@ Dự án nghiên cứu việc kết hợp giữa nền tảng Web hiện đại 
 
 Hệ thống cung cấp một giải pháp thương mại điện tử toàn diện bao gồm cả mặt quản trị và trải nghiệm mua sắm:
 
-* **Hệ thống Web (ReactJS & MySQL):** * Quản lý sản phẩm, danh mục, đơn hàng và tài khoản người dùng.
+* **Hệ thống Web (ReactJS & MySQL):**
+    * Quản lý sản phẩm, danh mục, đơn hàng và tài khoản người dùng.
     * Hỗ trợ bộ lọc thông minh, sắp xếp tồn kho và xuất báo cáo Excel/PDF chuyên nghiệp.
 * **Hệ thống Chatbot (RASA AI):**
     * Nhận diện ý định (Intent) và thực thể (Entity) tiếng Việt chuyên ngành công nghệ.

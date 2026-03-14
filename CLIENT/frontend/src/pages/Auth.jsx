@@ -109,7 +109,7 @@ const Auth = () => {
 
             <form className="auth-form" onSubmit={handleSubmit}>
               {!isLogin && (
-                <div className="input-group">
+                <div className="input-group-auth">
                   <User size={20} />
                   <input 
                     name="fullname" type="text" placeholder="Họ và tên" 
@@ -118,7 +118,7 @@ const Auth = () => {
                 </div>
               )}
               
-              <div className="input-group">
+              <div className="input-group-auth">
                 <Mail size={20} />
                 <input 
                   name="email" type="email" placeholder="Email của bạn" 
@@ -126,7 +126,7 @@ const Auth = () => {
                 />
               </div>
 
-              <div className="input-group">
+              <div className="input-group-auth">
                 <Lock size={20} />
                 <input 
                   name="password" type="password" placeholder="Mật khẩu" 

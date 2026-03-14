@@ -56,12 +56,12 @@
 }
 
 /* --- NHẬP LIỆU (INPUT GROUPS) --- */
-.input-group {
+.input-group-auth {
   position: relative;
   margin-bottom: 20px;
 }
 
-.input-group svg {
+.input-group-auth svg {
   position: absolute;
   left: 15px;
   top: 50%;
@@ -70,7 +70,7 @@
   transition: 0.3s;
 }
 
-.input-group input {
+.input-group-auth input {
   width: 100%;
   padding: 15px 15px 15px 45px;
   border: 1.5px solid var(--border-color);
@@ -81,13 +81,13 @@
   transition: all 0.3s ease;
 }
 
-.input-group input:focus {
+.input-group-auth input:focus {
   border-color: var(--primary-color);
   background: var(--white);
   box-shadow: 0 0 0 4px rgba(225, 6, 0, 0.05);
 }
 
-.input-group input:focus + svg {
+.input-group-auth input:focus + svg {
   color: var(--primary-color);
 }
 

@@ -162,3 +162,43 @@
   .product-actions { right: 10px; opacity: 0.5; } /* Hiện sẵn trên mobile nhưng mờ hơn */
   .current-price { font-size: 1.1rem; }
 }
+.price-flex {
+    display: flex;
+    flex-direction: column;
+}
+
+.sale-price {
+    color: #ff4d4d !important;
+    font-weight: 800;
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.85rem;
+    margin-top: -2px;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff4d4d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    z-index: 2;
+}
+
+.cat-with-flash {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-flash {
+    background: linear-gradient(90deg, #ff4d4d, #f9cb28) !important;
+    border: none !important;
+}

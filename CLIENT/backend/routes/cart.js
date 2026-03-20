@@ -2,11 +2,20 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// 1. Lấy danh sách sản phẩm (Thêm cột p.stock để Frontend kiểm tra)
+// 1. Lấy danh sách sản phẩm (Đã thêm discount_price và is_flash_sale)
 router.get('/:userId', async (req, res) => {
     try {
         const sql = `
-            SELECT ci.id as item_id, p.id as product_id, p.name, p.price, p.image, p.stock, ci.quantity 
+            SELECT 
+                ci.id as item_id, 
+                p.id as product_id, 
+                p.name, 
+                p.price, 
+                p.discount_price, 
+                p.is_flash_sale, 
+                p.image, 
+                p.stock, 
+                ci.quantity 
             FROM carts c
             JOIN cart_items ci ON c.id = ci.cart_id
             JOIN products p ON ci.product_id = p.id

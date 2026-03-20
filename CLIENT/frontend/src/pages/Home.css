@@ -145,3 +145,115 @@
 @media (max-width: 480px) {
   .product-grid { grid-template-columns: 1fr; }
 }
+
+/* --- FLASH SALE SECTION (Tông đỏ công nghệ) --- */
+.fs-section {
+    background: linear-gradient(135deg, rgba(255, 77, 77, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+    padding: 40px 20px;
+    border-radius: 30px;
+    margin-top: 40px;
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.fs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.fs-title-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fs-title-box h2 {
+    color: #ff4d4d;
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    text-transform: uppercase;
+    font-family: 'Cabin', sans-serif;
+}
+
+.zap-icon {
+    animation: blink 1s infinite;
+}
+
+.fs-timer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #ff4d4d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+}
+
+.timer-box {
+    font-family: monospace;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+}
+
+.fs-card-item {
+    position: relative;
+}
+
+.fs-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #ff4d4d;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
+}
+
+/* --- BEST SELLERS SECTION (Tông xanh/đen thanh lịch) --- */
+.bs-section {
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    margin-top: 20px;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes blink {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* --- ĐỒNG BỘ LẠI GRID CHO ĐẸP --- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px; /* Giảm gap một chút để card trông to hơn */
+}
+
+/* Hiệu ứng hover chung cho card ở trang chủ */
+.fs-card-item:hover, .category-section .product-card:hover {
+    transform: translateY(-8px);
+    transition: all 0.3s ease;
+}
+
+/* Responsive cập nhật */
+@media (max-width: 768px) {
+    .fs-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .fs-title-box h2 { font-size: 1.5rem; }
+    .fs-timer { width: 100%; justify-content: center; }
+}

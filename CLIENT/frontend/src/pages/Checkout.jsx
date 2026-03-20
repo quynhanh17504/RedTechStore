@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package } from 'lucide-react';
+import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package, Zap } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import './Checkout.css';
@@ -11,7 +11,7 @@ const Checkout = () => {
     const userId = user?.id;
 
     const [cartItems, setCartItems] = useState([]);
-    const [isSuccess, setIsSuccess] = useState(false); // Trạng thái đặt hàng thành công
+    const [isSuccess, setIsSuccess] = useState(false);
     const [formData, setFormData] = useState({
         fullname: user?.fullname || '',
         phone: '',
@@ -26,6 +26,7 @@ const Checkout = () => {
         }
         const fetchCart = async () => {
             try {
+                // Sử dụng API đã được JOIN với bảng products để có discount_price
                 const res = await axios.get(`http://localhost:3005/client/cart/${userId}`);
                 setCartItems(res.data);
                 if (res.data.length === 0 && !isSuccess) navigate('/cart');
@@ -40,28 +41,42 @@ const Checkout = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    // LOGIC TÍNH TỔNG MỚI: Ưu tiên giá Flash Sale
+    const calculateSubtotal = () => {
+        return cartItems.reduce((acc, item) => {
+            const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
+            const finalPrice = isSale ? item.discount_price : item.price;
+            return acc + (finalPrice * item.quantity);
+        }, 0);
+    };
+
+    const subtotal = calculateSubtotal();
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
         const loading = toast.loading("Đang xử lý đơn hàng...");
 
         try {
+            // Chuẩn bị dữ liệu items với giá đã chốt (đã tính sale) để lưu vào chi tiết hóa đơn
+            const finalizedItems = cartItems.map(item => {
+                const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
+                return {
+                    ...item,
+                    finalPrice: isSale ? item.discount_price : item.price
+                };
+            });
+
             const orderData = {
                 userId,
                 ...formData,
                 totalPrice: subtotal,
-                items: cartItems 
+                items: finalizedItems 
             };
 
             await axios.post('http://localhost:3005/client/order/place', orderData);
 
             toast.success("Đặt hàng thành công!", { id: loading });
-            
-            // Cập nhật trạng thái thành công để hiện UI mới
             setIsSuccess(true);
-            
-            // Thông báo cho Navbar cập nhật lại số lượng giỏ hàng (về 0)
             window.dispatchEvent(new Event('cartUpdated'));
             
         } catch (err) {
@@ -69,7 +84,6 @@ const Checkout = () => {
         }
     };
 
-    // GIAO DIỆN KHI ĐẶT HÀNG THÀNH CÔNG
     if (isSuccess) {
         return (
             <div className="checkout-success-container" style={{ fontFamily: 'Cabin, sans-serif' }}>
@@ -77,7 +91,6 @@ const Checkout = () => {
                     <CheckCircle size={80} color="#22c55e" className="success-icon" />
                     <h2>Đặt hàng thành công!</h2>
                     <p>Cảm ơn bạn đã tin tưởng <strong>RedTech</strong>. Đơn hàng của bạn đang được xử lý và sẽ sớm được giao đến bạn.</p>
-                    
                     <div className="success-actions">
                         <button onClick={() => navigate('/my-orders')} className="btn-success-view">
                             <Package size={20} /> Xem đơn hàng của tôi
@@ -91,10 +104,8 @@ const Checkout = () => {
         );
     }
 
-    // GIAO DIỆN FORM THANH TOÁN GỐC
     return (
         <div className="checkout-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
-            {/* Giữ nguyên phần return cũ của bạn ở đây */}
             <div className="container">
                 <div className="checkout-header">
                     <Link to="/cart" className="back-to-cart">
@@ -148,15 +159,23 @@ const Checkout = () => {
                         <div className="summary-sticky-card">
                             <h3>ĐƠN HÀNG CỦA BẠN</h3>
                             <div className="checkout-items-list">
-                                {cartItems.map(item => (
-                                    <div key={item.item_id} className="checkout-item-mini">
-                                        <div className="mini-info">
-                                            <span className="mini-qty">{item.quantity}x</span>
-                                            <span className="mini-name">{item.name}</span>
+                                {cartItems.map(item => {
+                                    const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
+                                    const currentPrice = isSale ? item.discount_price : item.price;
+                                    
+                                    return (
+                                        <div key={item.item_id} className="checkout-item-mini">
+                                            <div className="mini-info">
+                                                <span className="mini-qty">{item.quantity}x</span>
+                                                <div className="mini-name-wrapper">
+                                                    <span className="mini-name">{item.name}</span>
+                                                    {isSale && <span className="mini-sale-tag"><Zap size={10} fill="currentColor"/> Sale</span>}
+                                                </div>
+                                            </div>
+                                            <span className="mini-price">{(currentPrice * item.quantity).toLocaleString()}đ</span>
                                         </div>
-                                        <span className="mini-price">{(item.price * item.quantity).toLocaleString()}đ</span>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                             <hr />
                             <div className="summary-row"><span>Tạm tính</span><span>{subtotal.toLocaleString()}đ</span></div>

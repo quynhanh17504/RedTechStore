@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Eye, Heart } from 'lucide-react';
+import { ShoppingCart, Eye, Heart, Zap } from 'lucide-react'; // Thêm Zap cho Flash Sale
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './ProductCard.css';
@@ -9,14 +9,15 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const isOutOfStock = product.stock <= 0;
   
-  // Lấy thông tin user từ localStorage
+  // Kiểm tra xem sản phẩm có đang Flash Sale không
+  const hasDiscount = product.discount_price && product.discount_price > 0 && product.discount_price < product.price;
+  const discountPercent = hasDiscount ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0;
+
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?.id;
 
-  // --- HÀM XỬ LÝ THÊM VÀO GIỎ HÀNG ---
   const handleAddToCart = async (e) => {
-    e.stopPropagation(); // Ngăn chuyển trang khi click nút
-    
+    e.stopPropagation();
     if (!userId) {
       toast.error("Vui lòng đăng nhập để mua hàng!");
       navigate('/login');
@@ -32,8 +33,6 @@ const ProductCard = ({ product }) => {
 
       if (response.data.success || response.status === 200) {
         toast.success(`Đã thêm ${product.name} vào giỏ!`);
-        
-        // KÍCH HOẠT SỰ KIỆN ĐỂ NAVBAR CẬP NHẬT BADGE
         window.dispatchEvent(new Event('cartUpdated'));
       }
     } catch (error) {
@@ -47,7 +46,6 @@ const ProductCard = ({ product }) => {
     navigate(`/product/${product.id}`);
   };
 
-  // Xử lý ảnh JSON từ database
   let displayImage = "/images/default-product.jpg";
   try {
     if (product.image) {
@@ -61,9 +59,12 @@ const ProductCard = ({ product }) => {
   }
 
   return (
-    <div className={`product-card ${isOutOfStock ? 'oos-card' : ''}`} style={{ fontFamily: 'Cabin, sans-serif' }}>
+    <div className={`product-card ${isOutOfStock ? 'oos-card' : ''} ${hasDiscount ? 'flash-sale-card' : ''}`} style={{ fontFamily: 'Cabin, sans-serif' }}>
       <div className="product-img-box" onClick={goToDetail} style={{ cursor: 'pointer' }}>
         <img src={displayImage} alt={product.name} loading="lazy" />
+        
+        {/* Nhãn trạng thái & % giảm giá */}
+        {hasDiscount && <div className="discount-badge">-{discountPercent}%</div>}
         
         {isOutOfStock ? (
           <div className="status-label out-of-stock">HẾT HÀNG</div>
@@ -80,7 +81,6 @@ const ProductCard = ({ product }) => {
             <Eye size={18} />
           </button>
 
-          {/* Nút thêm nhanh vào giỏ hàng (Icon) */}
           <button 
             className="action-btn btn-cart-quick" 
             disabled={isOutOfStock} 
@@ -93,22 +93,35 @@ const ProductCard = ({ product }) => {
       </div>
 
       <div className="product-content">
-        <p className="product-category">{product.category_name || "THIẾT BỊ SỐ"}</p>
+        <div className="cat-with-flash">
+            <p className="product-category">{product.category_name || "THIẾT BỊ SỐ"}</p>
+            {hasDiscount && <Zap size={14} color="#ff4d4d" fill="#ff4d4d" />}
+        </div>
         
         <h3 className="product-title" onClick={goToDetail} style={{ cursor: 'pointer' }}>
           {product.name}
         </h3>
         
         <div className="price-group">
-          <span className="current-price">
-            {Number(product.price).toLocaleString('vi-VN')}đ
-          </span>
+          {hasDiscount ? (
+            <div className="price-flex">
+              <span className="current-price sale-price">
+                {Number(product.discount_price).toLocaleString('vi-VN')}đ
+              </span>
+              <span className="old-price">
+                {Number(product.price).toLocaleString('vi-VN')}đ
+              </span>
+            </div>
+          ) : (
+            <span className="current-price">
+              {Number(product.price).toLocaleString('vi-VN')}đ
+            </span>
+          )}
           <span className="stock-count">Kho: <b>{product.stock}</b></span>
         </div>
 
-        {/* Nút MUA NGAY (Full width) */}
         <button 
-          className="add-to-cart-full" 
+          className={`add-to-cart-full ${hasDiscount ? 'btn-flash' : ''}`} 
           disabled={isOutOfStock}
           onClick={handleAddToCart}
         >

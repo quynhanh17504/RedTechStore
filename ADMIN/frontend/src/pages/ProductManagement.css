@@ -316,6 +316,8 @@
 .product-modal {
     max-width: 1000px; 
     width: 95%;
+    margin-left: 60px;
+
 }
 .form-main-content {
     display: flex;
@@ -688,4 +690,108 @@ select {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+/* Badge Flash Sale trên ảnh sản phẩm */
+.flash-sale-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #ff8c00 0%, #E10600 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(225, 6, 0, 0.3);
+}
+
+/* Container chứa giá trong card */
+.card-price-container {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Giá đang bán (Sale) */
+.card-price.sale {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+/* Giá gốc (Bị gạch ngang) */
+.card-price.original {
+  font-size: 13px;
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+/* --- TRONG MODAL FORM --- */
+
+/* Khung gom nhóm quản lý giá */
+.price-management-box {
+  background: #fffafa;
+  border: 1px dashed #feb2b2;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+/* Toggle Switch cho Flash Sale */
+.flash-sale-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.flash-sale-toggle:hover {
+  background: #fff1f1;
+}
+
+.flash-sale-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.flash-sale-toggle label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  margin-bottom: 0; /* Ghi đè margin mặc định của label */
+}
+
+/* Tối ưu lại cột bên phải trong modal để không bị chật */
+.form-column-right .form-row.mt-2 {
+  margin-top: 15px;
+}
+
+/* Responsive cho phần giá trên mobile */
+@media (max-width: 480px) {
+  .card-price.sale {
+    font-size: 16px;
+  }
+  .card-price.original {
+    font-size: 12px;
+  }
 }

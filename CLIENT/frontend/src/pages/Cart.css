@@ -277,3 +277,34 @@
     margin: 10px 0;
   }
 }
+.item-price-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sale-active {
+    color: #e10600; /* Màu đỏ RedTech */
+    font-weight: 700;
+}
+
+.item-old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.cart-sale-badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: #e10600;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}

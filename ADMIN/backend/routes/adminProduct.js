@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const upload = require('../cloudinary');
 
-// 1. Lấy danh sách sản phẩm
+// 1. Lấy danh sách sản phẩm (Bao gồm cả thông tin sale)
 router.get('/', async (req, res) => {
     try {
         const query = `
@@ -20,22 +20,35 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. Thêm sản phẩm
+// 2. Thêm sản phẩm mới (Hỗ trợ Flash Sale)
 router.post('/add', upload.array('images', 4), async (req, res) => {
     try {
-        const { name, price, category_id, brand_id, stock, description, specifications } = req.body;
+        const { 
+            name, price, category_id, brand_id, stock, 
+            description, specifications, discount_price, is_flash_sale 
+        } = req.body;
+
         let imagesData = "[]"; 
         if (req.files && req.files.length > 0) {
             const imageUrls = req.files.map(file => file.path);
             imagesData = JSON.stringify(imageUrls);
         }
 
-        const sql = `INSERT INTO products (name, description, price, stock, image, category_id, brand_id, specifications) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const sql = `INSERT INTO products 
+            (name, description, price, stock, image, category_id, brand_id, specifications, discount_price, is_flash_sale) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await db.execute(sql, [
-            name, description || "", parseFloat(price), parseInt(stock), 
-            imagesData, parseInt(category_id) || null, parseInt(brand_id) || null, specifications || null 
+            name, 
+            description || "", 
+            parseFloat(price) || 0, 
+            parseInt(stock) || 0, 
+            imagesData, 
+            parseInt(category_id) || null, 
+            parseInt(brand_id) || null, 
+            specifications || null,
+            parseFloat(discount_price) || 0,
+            parseInt(is_flash_sale) || 0
         ]);
 
         res.status(201).json({ message: "Thêm sản phẩm thành công" });
@@ -44,26 +57,42 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
     }
 });
 
-// 3. Cập nhật sản phẩm (BỔ SUNG ĐỂ SỬA LỖI 404 KHI UPDATE)
+// 3. Cập nhật sản phẩm (Hỗ trợ Flash Sale & Giữ ảnh cũ)
 router.put('/update/:id', upload.array('images', 4), async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, price, category_id, brand_id, stock, description, specifications, existingImages } = req.body;
+        const { 
+            name, price, category_id, brand_id, stock, 
+            description, specifications, existingImages, discount_price, is_flash_sale 
+        } = req.body;
 
-        // Xử lý ảnh: Kết hợp ảnh cũ giữ lại và ảnh mới upload
+        // Xử lý logic ảnh: Kết hợp ảnh cũ còn lại và ảnh mới upload từ Cloudinary
         let finalImages = JSON.parse(existingImages || "[]");
         if (req.files && req.files.length > 0) {
             const newImageUrls = req.files.map(file => file.path);
             finalImages = [...finalImages, ...newImageUrls];
         }
 
-        const sql = `UPDATE products SET name=?, description=?, price=?, stock=?, image=?, category_id=?, brand_id=?, specifications=? WHERE id=?`;
+        const sql = `UPDATE products SET 
+            name=?, description=?, price=?, stock=?, image=?, 
+            category_id=?, brand_id=?, specifications=?, discount_price=?, is_flash_sale=? 
+            WHERE id=?`;
+
         await db.execute(sql, [
-            name, description, parseFloat(price), parseInt(stock), 
-            JSON.stringify(finalImages), parseInt(category_id), parseInt(brand_id), specifications, id
+            name, 
+            description, 
+            parseFloat(price) || 0, 
+            parseInt(stock) || 0, 
+            JSON.stringify(finalImages), 
+            parseInt(category_id) || null, 
+            parseInt(brand_id) || null, 
+            specifications || null,
+            parseFloat(discount_price) || 0,
+            parseInt(is_flash_sale) || 0,
+            id
         ]);
 
-        res.json({ message: "Cập nhật thành công" });
+        res.json({ message: "Cập nhật sản phẩm thành công" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -73,7 +102,7 @@ router.put('/update/:id', upload.array('images', 4), async (req, res) => {
 router.delete('/delete/:id', async (req, res) => {
     try {
         await db.execute('DELETE FROM products WHERE id = ?', [req.params.id]);
-        res.json({ message: "Đã xóa sản phẩm" });
+        res.json({ message: "Đã xóa sản phẩm thành công" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

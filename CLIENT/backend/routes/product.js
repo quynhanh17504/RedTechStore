@@ -40,6 +40,50 @@ router.get('/', async (req, res) => {
     }
 });
 
+// 2. API FLASH SALE: Lấy sản phẩm có is_flash_sale = 1
+router.get('/flash-sale', async (req, res) => {
+    try {
+        const query = `
+            SELECT p.*, b.name as brand_name 
+            FROM products p
+            LEFT JOIN brands b ON p.brand_id = b.id
+            WHERE p.is_flash_sale = 1 AND p.stock > 0
+            LIMIT 4
+        `;
+        const [rows] = await db.execute(query);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. API BÁN CHẠY: Lấy sản phẩm có số lượng bán nhiều nhất từ bảng order_items
+router.get('/best-sellers', async (req, res) => {
+    try {
+        const query = `
+            SELECT p.*, SUM(oi.quantity) as total_sold
+            FROM products p
+            JOIN order_items oi ON p.id = oi.product_id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'delivered'
+            GROUP BY p.id
+            ORDER BY total_sold DESC
+            LIMIT 4
+        `;
+        const [rows] = await db.execute(query);
+        
+        // Nếu chưa có đơn hàng nào 'delivered', trả về 4 sản phẩm mới nhất để tránh trắng trang
+        if (rows.length === 0) {
+            const [backupRows] = await db.execute('SELECT * FROM products ORDER BY id DESC LIMIT 4');
+            return res.json(backupRows);
+        }
+        
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API: Lấy chi tiết 1 sản phẩm theo ID (Giữ nguyên logic của bạn nhưng tối ưu hơn)
 router.get('/:id', async (req, res) => {
     try {

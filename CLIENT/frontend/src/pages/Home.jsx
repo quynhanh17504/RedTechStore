@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
-import { Zap, ShieldCheck, Headphones, ChevronRight } from 'lucide-react';
+import { Zap, ShieldCheck, Headphones, ChevronRight, TrendingUp } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade } from 'swiper/modules';
 
-// Import CSS đồng bộ
+// Import CSS
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
@@ -15,10 +15,11 @@ import './Home.css';
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [flashSales, setFlashSales] = useState([]); // State cho Flash Sale
+  const [bestSellers, setBestSellers] = useState([]); // State cho Bán chạy
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Banners trang chủ
   const banners = [
     { id: 1, img: "/images/banners/banner1.jpg" },
     { id: 2, img: "/images/banners/banner2.jpg" },
@@ -28,14 +29,18 @@ const Home = () => {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        // Gọi đồng thời cả 2 API để tối ưu tốc độ load
-        const [prodRes, catRes] = await Promise.all([
+        // Gọi đồng thời 4 API để tối ưu hiệu năng
+        const [prodRes, catRes, flashRes, bestRes] = await Promise.all([
           axios.get('http://localhost:3005/client/products'),
-          axios.get('http://localhost:3005/client/categories')
+          axios.get('http://localhost:3005/client/categories'),
+          axios.get('http://localhost:3005/client/products/flash-sale'),
+          axios.get('http://localhost:3005/client/products/best-sellers')
         ]);
         
         setProducts(prodRes.data);
         setCategories(catRes.data);
+        setFlashSales(flashRes.data);
+        setBestSellers(bestRes.data);
       } catch (err) {
         console.error("Lỗi kết nối API RedTech:", err);
       } finally {
@@ -45,16 +50,15 @@ const Home = () => {
     fetchHomeData();
   }, []);
 
-  // Màn hình loading RedTech Style
   if (loading) return (
-    <div className="loading-screen">
+    <div className="loading-screen" style={{fontFamily: 'Cabin'}}>
       <div className="redtech-loader"></div>
       <p>Đang tải không gian công nghệ...</p>
     </div>
   );
 
   return (
-    <div className="home-page">
+    <div className="home-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
       {/* 1. HERO SLIDER SECTION */}
       <section className="hero-slider">
         <Swiper
@@ -78,38 +82,72 @@ const Home = () => {
       </section>
 
       <div className="home-content-wrapper">
-        {/* 2. FEATURES BAR (Glassmorphism) */}
+        {/* 2. FEATURES BAR */}
         <section className="features-glass-bar">
           <div className="container features-inner">
             <div className="f-item">
               <ShieldCheck size={24} /> 
-              <div className="f-text">
-                <strong>Bảo hành 24 tháng</strong>
-              </div>
+              <div className="f-text"><strong>Bảo hành 24 tháng</strong></div>
             </div>
             <div className="f-item">
               <Zap size={24} /> 
-              <div className="f-text">
-                <strong>Giao nhanh toàn quốc</strong>
-              </div>
+              <div className="f-text"><strong>Giao nhanh toàn quốc</strong></div>
             </div>
             <div className="f-item">
               <Headphones size={24} /> 
-              <div className="f-text">
-                <strong>Hỗ trợ kỹ thuật 24/7</strong>
-              </div>
+              <div className="f-text"><strong>Hỗ trợ kỹ thuật 24/7</strong></div>
             </div>
           </div>
         </section>
 
-        {/* 3. DYNAMIC CATEGORY BLOCKS (Render dựa trên Database) */}
+        {/* 3. FLASH SALE SECTION (Mới) */}
+        {flashSales.length > 0 && (
+          <section className="container fs-section">
+            <div className="fs-header">
+              <div className="fs-title-box">
+                <Zap size={28} className="zap-icon" fill="#ff4d4d" />
+                <h2>FLASH SALE</h2>
+              </div>
+              <div className="fs-timer">
+                <span>Kết thúc sau:</span>
+                <div className="timer-box">02 : 45 : 10</div>
+              </div>
+            </div>
+            <div className="product-grid">
+              {flashSales.map(product => (
+                <div key={`fs-${product.id}`} className="fs-card-item">
+                  <ProductCard product={product} />
+                  <div className="fs-badge">SALE</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 4. BEST SELLERS SECTION (Mới) */}
+        {bestSellers.length > 0 && (
+          <section className="container bs-section">
+            <div className="section-header-v2">
+              <div className="title-group-v2">
+                <h2 className="section-title-v2">SẢN PHẨM BÁN CHẠY</h2>
+                <div className="title-underline-v2"></div>
+              </div>
+              <TrendingUp size={24} color="#333" />
+            </div>
+            <div className="product-grid">
+              {bestSellers.map(product => (
+                <ProductCard key={`bs-${product.id}`} product={product} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 5. DYNAMIC CATEGORY BLOCKS */}
         {categories.map((cat) => {
-          // Lọc ra tối đa 4 sản phẩm thuộc category_id hiện tại
           const catProducts = products
             .filter(p => p.category_id === cat.id)
             .slice(0, 4);
 
-          // Nếu danh mục này chưa có sản phẩm nào thì không hiển thị Section
           if (catProducts.length === 0) return null;
 
           return (
@@ -126,10 +164,9 @@ const Home = () => {
                   Xem tất cả <ChevronRight size={18} />
                 </button>
               </div>
-              
               <div className="product-grid">
                 {catProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={`cat-${product.id}`} product={product} />
                 ))}
               </div>
             </section>

@@ -1,16 +1,6 @@
 version: "3.1"
 
 rules:
-  - rule: Thực hiện tìm kiếm sản phẩm bất cứ khi nào có yêu cầu
-    steps:
-      - intent: tim_san_pham
-      - action: action_search_product
-
-  - rule: Thực hiện tìm sản phẩm mới
-    steps:
-      - intent: hoi_san_pham_moi
-      - action: action_search_product
-
   - rule: Chào hỏi khách hàng
     steps:
       - intent: greet
@@ -20,3 +10,38 @@ rules:
     steps:
       - intent: bot_challenge
       - action: utter_iamabot
+
+  - rule: Tạm biệt khách hàng
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - rule: Tìm kiếm sản phẩm theo yêu cầu
+    steps:
+      - intent: tim_san_pham
+      - action: action_search_product
+
+  - rule: Tìm sản phẩm mới nhất
+    steps:
+      - intent: hoi_san_pham_moi
+      - action: action_search_product
+
+  - rule: Kiểm tra tồn kho sản phẩm
+    steps:
+      - intent: hoi_ton_kho
+      - action: action_search_product
+
+  - rule: Xem sản phẩm đang giảm giá
+    steps:
+      - intent: hoi_khuyen_mai
+      - action: action_search_product
+
+  - rule: Xem sản phẩm bán chạy/hot
+    steps:
+      - intent: hoi_san_pham_hot
+      - action: action_search_product
+
+  - rule: Phản hồi mặc định khi không hiểu ý khách
+    steps:
+      - intent: nlu_fallback
+      - action: utter_default

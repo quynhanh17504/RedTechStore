@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Bot, Send, Minus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { io } from "socket.io-client";
 import './Chatbot.css';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
-    const [isTyping, setIsTyping] = useState(false); // Trạng thái Bot đang gõ
+    const [isTyping, setIsTyping] = useState(false);
     const [messages, setMessages] = useState([
         { id: 1, text: "Xin chào! Tôi là RT Bot. Bạn cần tìm điện thoại, laptop hay linh kiện gì?", sender: "bot" }
     ]);
@@ -15,7 +14,7 @@ const Chatbot = () => {
     const scrollRef = useRef(null);
     const navigate = useNavigate();
 
-    // 1. Cố định Session ID
+    // 1. Cố định Session ID (Giữ nguyên logic cũ rất tốt)
     const sessionId = useMemo(() => {
         let id = sessionStorage.getItem("rasa_session_id");
         if (!id) {
@@ -25,15 +24,7 @@ const Chatbot = () => {
         return id;
     }, []);
 
-    // 2. Khởi tạo Socket với cơ chế Reconnect và Transports bắt buộc
-    const socket = useMemo(() => io("http://localhost:5005", {
-        transports: ["websocket"], // Ép dùng websocket để tránh lỗi polling (403/404)
-        upgrade: false,
-        reconnectionAttempts: 5,
-        query: { session_id: sessionId }
-    }), [sessionId]);
-
-    // 3. Auto Scroll mượt mà
+    // 2. Auto Scroll
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTo({
@@ -43,49 +34,64 @@ const Chatbot = () => {
         }
     }, [messages, isTyping, isOpen]);
 
-    useEffect(() => {
-        socket.on("connect", () => {
-            console.log("✅ Socket Connected:", socket.id);
-            socket.emit("session_request", { session_id: sessionId });
-        });
-
-        socket.on("connect_error", (err) => {
-            console.error("❌ Connection Error:", err.message);
-        });
-
-        // 4. Nhận tin nhắn từ Bot
-        socket.on("bot_uttered", (message) => {
-            console.log("📩 Rasa Response:", message);
-            setIsTyping(false); // Dừng hiệu ứng gõ khi nhận được tin
-
-            setMessages(prev => [...prev, {
-                id: Date.now() + Math.random(),
-                text: (message.text && message.text !== "None") ? message.text : null,
-                attachment: message.attachment || null,
-                sender: "bot"
-            }]);
-        });
-
-        return () => {
-            socket.off("connect");
-            socket.off("connect_error");
-            socket.off("bot_uttered");
-        };
-    }, [socket, sessionId]);
-
-    const handleSend = () => {
+    // 3. Hàm gửi tin nhắn qua REST API
+    const handleSend = async () => {
         if (!input.trim()) return;
 
         const userMsg = { id: Date.now(), text: input, sender: "user" };
         setMessages(prev => [...prev, userMsg]);
-        setIsTyping(true); // Hiển thị "Bot đang gõ..."
-
-        socket.emit("user_uttered", { 
-            message: input,
-            session_id: sessionId 
-        });
         
+        const currentInput = input;
         setInput("");
+        setIsTyping(true); // Hiển thị trạng thái Bot đang xử lý
+
+        try {
+            const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    sender: sessionId,
+                    message: currentInput
+                })
+            });
+
+            if (!response.ok) throw new Error("Server Rasa không phản hồi");
+
+            const data = await response.json();
+            
+            // Đợi một chút để tạo cảm giác Bot đang suy nghĩ
+            setTimeout(() => {
+                if (data && data.length > 0) {
+                    data.forEach((msg) => {
+                        setMessages(prev => [...prev, {
+                            id: Date.now() + Math.random(),
+                            text: (msg.text && msg.text !== "None") ? msg.text : null,
+                            attachment: msg.attachment || null,
+                            sender: "bot"
+                        }]);
+                    });
+                } else {
+                    // Trường hợp Rasa hiểu nhưng không có câu trả lời định nghĩa sẵn
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        text: "Xin lỗi, mình chưa hiểu ý bạn lắm.",
+                        sender: "bot"
+                    }]);
+                }
+                setIsTyping(false);
+            }, 500);
+
+        } catch (error) {
+            console.error("❌ Lỗi kết nối Rasa REST:", error);
+            setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: "Hệ thống đang bảo trì, Ngọc vui lòng thử lại sau nhé!",
+                sender: "bot"
+            }]);
+            setIsTyping(false);
+        }
     };
 
     return (
@@ -146,7 +152,6 @@ const Chatbot = () => {
                             </div>
                         ))}
                         
-                        {/* Typing Indicator */}
                         {isTyping && (
                             <div className="msg-group bot">
                                 <div className="msg-container bot">

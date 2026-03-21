@@ -3,16 +3,21 @@ version: "3.1"
 intents:
   - greet
   - goodbye
+  - bot_challenge
   - tim_san_pham
   - hoi_san_pham_moi
-  - bot_challenge
+  - hoi_ton_kho      
+  - hoi_khuyen_mai  
+  - hoi_san_pham_hot 
 
 entities:
   - category
   - brand
   - product_name
   - filter_new
-
+  - filter_stock     
+  - filter_sale   
+  - filter_hot       
 slots:
   category:
     type: text
@@ -38,19 +43,37 @@ slots:
     mappings:
       - type: from_entity
         entity: filter_new
+  filter_stock:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: filter_stock
+  filter_sale:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: filter_sale
+  filter_hot:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: filter_hot
 
 responses:
   utter_greet:
-    - text: "Chào bạn! Mình là RT Bot 🤖. Bạn muốn tìm sản phẩm, thương hiệu hay xem các mẫu mới nhất tại RedTech Store?"
+    - text: "Chào bạn! Mình là RT Bot 🤖. Bạn muốn tìm sản phẩm, xem hàng Flash Sale hay các mẫu mới nhất tại RedTech Store?"
   
   utter_goodbye:
-    - text: "Tạm biệt! Hy vọng bạn đã chọn được món đồ công nghệ ưng ý. Hẹn gặp lại!"
+    - text: "Tạm biệt! Hy vọng bạn đã chọn được món đồ công nghệ ưng ý tại RedTech Store. Hẹn gặp lại!"
 
   utter_iamabot:
-    - text: "Mình là RT Bot, trợ lý ảo thông minh của RedTech Store. Mình có thể giúp bạn tìm kiếm sản phẩm nhanh chóng!"
+    - text: "Mình là RT Bot, trợ lý ảo thông minh của RedTech Store. Mình có thể giúp bạn tra cứu tồn kho, tìm sản phẩm và săn sale cực nhanh!"
 
   utter_default:
-    - text: "Xin lỗi, RT Bot chưa hiểu ý bạn. Bạn có thể thử hỏi: 'Tìm iPhone 15' hoặc 'Laptop Dell mới nhất' được không?"
+    - text: "Xin lỗi, RT Bot chưa hiểu ý bạn. Bạn có thể thử hỏi: 'iPhone 15 còn hàng không?' hoặc 'Cho xem sản phẩm giảm giá' nhé!"
 
 actions:
   - action_search_product

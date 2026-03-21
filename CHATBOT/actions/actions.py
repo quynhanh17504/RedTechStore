@@ -18,33 +18,61 @@ class ActionSearchProduct(Action):
         product_name = tracker.get_slot("product_name")
         filter_new = tracker.get_slot("filter_new")
 
-        # 2. Tạo chuỗi tìm kiếm tổng hợp
-        search_query = f"{product_name or ''} {brand or ''} {category or ''}".strip()
-        
-        if filter_new and not search_query:
-            search_query = ""
+        # Xác định ý định người dùng qua từ khóa
+        user_msg = tracker.latest_message.get('text', '').lower()
+        is_checking_stock = any(word in user_msg for word in ["còn", "có sẵn", "tồn kho", "số lượng"])
+        is_asking_sale = any(word in user_msg for word in ["giảm giá", "sale", "flash sale", "khuyến mãi"])
+        is_asking_best = any(word in user_msg for word in ["bán chạy", "hot", "phổ biến"])
+
+        # 2. Quyết định API Endpoint
+        # Mặc định là tìm kiếm chung
+        api_url = "http://localhost:3005/client/products"
+        params = {}
+
+        if is_asking_sale:
+            api_url = "http://localhost:3005/client/products/flash-sale"
+        elif is_asking_best:
+            api_url = "http://localhost:3005/client/products/best-sellers"
+        else:
+            search_query = f"{product_name or ''} {brand or ''} {category or ''}".strip()
+            if filter_new and not search_query:
+                search_query = ""
+            params["search"] = search_query
 
         try:
-            # 3. Gọi API Backend Node.js (Cổng 3005)
-            r = requests.get(f"http://localhost:3005/client/products", params={"search": search_query}, timeout=5)
+            # 3. Gọi API Backend Node.js
+            r = requests.get(api_url, params=params, timeout=5)
             products = r.json()
 
             if products:
-                dispatcher.utter_message(text=f"RT Bot tìm thấy {len(products)} sản phẩm phù hợp:")
-                
+                # --- XỬ LÝ PHẢN HỒI VĂN BẢN ---
+                if is_checking_stock and product_name:
+                    # Lấy sản phẩm đầu tiên khớp nhất để báo tồn kho
+                    p_match = products[0]
+                    stock = p_match.get('stock', 0)
+                    if stock > 0:
+                        dispatcher.utter_message(text=f"✅ Dạ còn hàng ạ! {p_match['name']} hiện đang sẵn có {stock} cái tại cửa hàng.")
+                    else:
+                        dispatcher.utter_message(text=f"❌ Rất tiếc, {p_match['name']} hiện tại đang tạm hết hàng rồi ạ.")
+                elif is_asking_sale:
+                    dispatcher.utter_message(text="🔥 Đây là các sản phẩm Flash Sale giá cực hời cho bạn:")
+                elif is_asking_best:
+                    dispatcher.utter_message(text="🌟 Top những sản phẩm bán chạy nhất tại RedTechStore:")
+                else:
+                    dispatcher.utter_message(text=f"RT Bot tìm thấy {len(products)} sản phẩm phù hợp:")
+
+                # --- XỬ LÝ DANH SÁCH CARD SẢN PHẨM ---
                 product_cards = []
-                for p in products[:4]:
-                    # --- XỬ LÝ HÌNH ẢNH THÔNG MINH ---
+                for p in products[:8]: # Lấy tối đa 8 cái để trượt ngang cho sướng
+                    # Xử lý hình ảnh
                     raw_image = p.get('image')
-                    img_url = "http://localhost:3005/uploads/default-product.jpg" # Ảnh mặc định
+                    img_url = "http://localhost:3005/uploads/default-product.jpg"
                     
                     if raw_image:
                         try:
-                            # Nếu là mảng JSON string, parse lấy phần tử đầu
                             imgs = json.loads(raw_image) if isinstance(raw_image, str) and raw_image.startswith('[') else raw_image
                             first_img = imgs[0] if isinstance(imgs, list) else imgs
                             
-                            # KIỂM TRA: Nếu là link tuyệt đối (Cloudinary/HTTP) thì không cộng localhost
                             if str(first_img).startswith("http"):
                                 img_url = first_img
                             else:
@@ -57,16 +85,18 @@ class ActionSearchProduct(Action):
                         "name": p['name'],
                         "price": p['price'],
                         "image": img_url,
-                        "link": f"/product/{p['id']}"
+                        "link": f"/product/{p['id']}",
+                        "stock": p.get('stock', 0)
                     })
                 
                 # Gửi payload về cho React
                 dispatcher.utter_message(attachment={"type": "product_cards", "data": product_cards})
+            
             else:
-                dispatcher.utter_message(text="Rất tiếc, mình không tìm thấy sản phẩm nào khớp với yêu cầu.")
+                dispatcher.utter_message(text="Dạ hiện tại mình chưa tìm thấy sản phẩm nào khớp với yêu cầu của bạn rồi.")
         
         except Exception as e:
-            print(f"❌ Lỗi Action Search: {e}")
-            dispatcher.utter_message(text="Hệ thống tra cứu đang bận, bạn đợi tí nhé!")
+            print(f"❌ Lỗi Action Server: {e}")
+            dispatcher.utter_message(text="Hệ thống tra cứu của RedTechStore đang bận, bạn đợi tí nhé!")
 
         return []

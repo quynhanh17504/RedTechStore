@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Lock, Save, CircleUserRound, ShoppingBag } from 'lucide-react';
+import { User, Mail, Lock, Save, CircleUserRound, ShoppingBag, CreditCard } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import MyOrders from './MyOrders'; 
+import MemberCard from '../components/MemberCard'; 
 import './EditProfile.css';
 
 const EditProfile = () => {
@@ -10,12 +11,14 @@ const EditProfile = () => {
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
+        memberRank: 'Member',
+        totalPoints: 0,
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
 
-    // Lấy userId từ localStorage
+    // Lấy userId từ localStorage an toàn
     const userStorage = JSON.parse(localStorage.getItem('user'));
     const userId = userStorage?.id;
 
@@ -23,11 +26,14 @@ const EditProfile = () => {
         const fetchUserData = async () => {
             if (!userId) return;
             try {
+                // Gọi API profile (Đảm bảo Backend của Ngọc trả về đủ: fullname, email, member_rank, total_points)
                 const res = await axios.get(`http://localhost:3005/client/auth/profile/${userId}`);
                 setFormData(prev => ({
                     ...prev,
                     fullName: res.data.fullname,
-                    email: res.data.email
+                    email: res.data.email,
+                    memberRank: res.data.member_rank || 'Member',
+                    totalPoints: res.data.total_points || 0
                 }));
             } catch (err) {
                 console.error("Fetch error:", err);
@@ -58,11 +64,11 @@ const EditProfile = () => {
 
             toast.success(res.data.message);
             
-            // Cập nhật lại localStorage để đồng bộ UI toàn trang
+            // Cập nhật lại localStorage để các Component khác (như Navbar) nhận diện tên mới
             const updatedUser = { ...userStorage, fullname: formData.fullName, email: formData.email };
             localStorage.setItem('user', JSON.stringify(updatedUser));
 
-            // Reset field mật khẩu sau khi lưu thành công
+            // Reset field mật khẩu
             setFormData(prev => ({
                 ...prev,
                 currentPassword: '',
@@ -70,6 +76,7 @@ const EditProfile = () => {
                 confirmPassword: ''
             }));
             
+            // Kích hoạt event để Navbar cập nhật lại hiển thị
             window.dispatchEvent(new Event('storage'));
         } catch (err) {
             toast.error(err.response?.data?.message || "Lỗi cập nhật dữ liệu");
@@ -87,23 +94,27 @@ const EditProfile = () => {
                 <aside className="profile-sidebar">
                     <div className="user-avatar-section">
                         <div className="avatar-wrapper">
-                            <CircleUserRound size={80} strokeWidth={1.2} color="var(--primary-color)" />
+                            <CircleUserRound size={80} strokeWidth={1.2} color="#e63946" />
                         </div>
                         <h3>{formData.fullName || "Người dùng"}</h3>
-                        <p className="user-role">Thành viên RedTech</p>
+                        <div className="rank-label">
+                            <span className={`badge-${formData.memberRank.toLowerCase()}`}>
+                                {formData.memberRank}
+                            </span>
+                        </div>
                     </div>
                     <nav className="profile-nav">
                         <button 
                             className={activeTab === 'profile' ? 'active' : ''} 
                             onClick={() => setActiveTab('profile')}
                         >
-                            <User size={18} /> Thông tin cá nhân
+                            <User size={18} /> Thông tin tài khoản
                         </button>
                         <button 
                             className={activeTab === 'orders' ? 'active' : ''} 
                             onClick={() => setActiveTab('orders')}
                         >
-                            <ShoppingBag size={18} /> Đơn hàng của tôi
+                            <ShoppingBag size={18} /> Đơn hàng đã mua
                         </button>
                     </nav>
                 </aside>
@@ -112,14 +123,27 @@ const EditProfile = () => {
                 <main className="profile-content">
                     {activeTab === 'profile' ? (
                         <div className="tab-fade-in">
+                            {/* PHẦN THẺ THÀNH VIÊN */}
+                            <div className="section-membership-card">
+                                <h4 className="section-title"><CreditCard size={18} /> Thẻ thành viên RedTech</h4>
+                                <MemberCard user={{
+                                    fullname: formData.fullName,
+                                    email: formData.email,
+                                    member_rank: formData.memberRank,
+                                    total_points: formData.totalPoints
+                                }} />
+                            </div>
+
+                            <hr className="divider" />
+
                             <div className="content-header">
-                                <h2>Thiết lập <span>tài khoản</span></h2>
-                                <p>Quản lý thông tin hồ sơ để bảo mật tài khoản</p>
+                                <h2>Cập nhật <span>hồ sơ</span></h2>
+                                <p>Thông tin của bạn được bảo mật trên hệ thống RedTech Store</p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="edit-form">
                                 <div className="form-section">
-                                    <h4 className="section-title"><User size={18} /> Thông tin cơ bản</h4>
+                                    <h4 className="section-title"><User size={18} /> Thông tin cá nhân</h4>
                                     <div className="form-group">
                                         <label>Họ và tên</label>
                                         <div className="input-icon-wrapper">
@@ -150,9 +174,7 @@ const EditProfile = () => {
                                 </div>
 
                                 <div className="form-section">
-                                    <h4 className="section-title"><Lock size={18} /> Bảo mật & Mật khẩu</h4>
-                                    <p className="form-note">* Chỉ điền nếu bạn muốn thay đổi mật khẩu.</p>
-                                    
+                                    <h4 className="section-title"><Lock size={18} /> Đổi mật khẩu</h4>
                                     <div className="form-group">
                                         <label>Mật khẩu hiện tại</label>
                                         <div className="input-icon-wrapper">
@@ -162,7 +184,7 @@ const EditProfile = () => {
                                                 name="currentPassword" 
                                                 value={formData.currentPassword} 
                                                 onChange={handleChange} 
-                                                placeholder="••••••••"
+                                                placeholder="Nhập mật khẩu cũ để xác nhận"
                                             />
                                         </div>
                                     </div>
@@ -175,11 +197,11 @@ const EditProfile = () => {
                                                 name="newPassword" 
                                                 value={formData.newPassword} 
                                                 onChange={handleChange} 
-                                                placeholder="Tối thiểu 8 ký tự"
+                                                placeholder="Mới (8+ ký tự)"
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label>Xác nhận mật khẩu</label>
+                                            <label>Xác nhận lại</label>
                                             <input 
                                                 type="password" 
                                                 name="confirmPassword" 
@@ -192,7 +214,7 @@ const EditProfile = () => {
                                 </div>
 
                                 <button type="submit" className="btn-save-profile">
-                                    <Save size={20} /> Lưu thay đổi
+                                    <Save size={20} /> Cập nhật ngay
                                 </button>
                             </form>
                         </div>

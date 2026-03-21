@@ -1,0 +1,70 @@
+.redtech-card {
+    width: 350px;
+    height: 200px;
+    border-radius: 20px;
+    padding: 20px;
+    font-family: 'Cabin', sans-serif;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.3s;
+}
+
+.redtech-card:hover { transform: scale(1.02); }
+
+/* Màu gradient đỏ đặc trưng của RedTech */
+.card-standard {
+    background: linear-gradient(135deg, #e63946 0%, #a82a33 100%);
+}
+
+.card-gold {
+    background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+    color: #443405;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.brand-logo { font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }
+.brand-logo span { font-weight: 300; }
+
+.rank-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.user-name { margin: 5px 0; font-size: 1.5rem; text-transform: uppercase; }
+.label { font-size: 0.7rem; opacity: 0.8; margin: 0; }
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 10px;
+}
+
+.points-info { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+/* Vòng tròn trang trí phía sau */
+.card-bg-circle {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    right: -50px;
+    top: -50px;
+}

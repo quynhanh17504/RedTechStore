@@ -1,27 +1,88 @@
-/* Sử dụng các biến từ root bạn đã cung cấp */
-
+/* Sử dụng các biến từ root và font Cabin */
 .admin-main {
   flex: 1;
-  padding: 40px; /* Tăng padding để không gian thoáng đãng hơn */
+  padding: 40px;
   min-width: 0;
   background-color: var(--bg-light);
+  font-family: 'Cabin', sans-serif;
 }
 
-/* --- Header & Profile (Minimalist Style) --- */
+/* --- Header & Profile --- */
+/* --- Header Redesign --- */
 .main-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end; /* Căn lề dưới để tạo cảm giác vững chãi */
   margin-bottom: 40px;
+  padding-bottom: 10px;
+}
+
+.welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34, 197, 94, 0.1); /* Màu xanh lá nhạt */
+  color: #16a34a;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.dot-pulse {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  position: relative;
+}
+
+.dot-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
 }
 
 .header-title h1 {
-  font-size: 1.8rem;
-  letter-spacing: -0.5px;
-  margin-bottom: 5px;
+  font-size: 2.2rem; /* Tăng size tiêu đề */
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+  margin: 0;
 }
 
-/* Profile Pill thiết kế lại: Phẳng hơn và tập trung vào Typography */
+.header-title h1 span {
+  color: var(--primary-color);
+  background: var(--gradient-red);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-title p {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 500px;
+}
+
+.highlight-text {
+  color: var(--text-main);
+  font-weight: 700;
+  border-bottom: 2px solid var(--primary-color);
+}
+
 .admin-profile-pill {
   display: flex;
   align-items: center;
@@ -29,7 +90,7 @@
   background: var(--white);
   padding: 8px 8px 8px 20px;
   border-radius: 100px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); /* Đổ bóng cực nhẹ */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: var(--transition);
 }
@@ -49,16 +110,11 @@
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--text-main);
-  line-height: 1.2;
 }
 
 .admin-email {
   font-size: 0.8rem;
   color: var(--text-light);
-}
-
-.admin-visual {
-  position: relative;
 }
 
 .admin-icon-bg {
@@ -79,70 +135,95 @@
   right: 2px;
   width: 11px;
   height: 11px;
-  background: #22c55e; /* Màu xanh lá chuẩn modern */
+  background: #22c55e;
   border: 2px solid var(--white);
   border-radius: 50%;
 }
 
-/* --- Stat Cards (Modern Grid) --- */
+/* --- Stat Cards --- */
+/* --- Stat Cards (Modernized) --- */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
   margin-bottom: 40px;
 }
 
 .stat-card {
   background: var(--white);
-  padding: 28px;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(226, 232, 240, 0.5);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 20px; /* Bo tròn mềm mại hơn */
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 24px;
 }
 
 .stat-card:hover {
-  transform: scale(1.02);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  border-color: rgba(225, 6, 0, 0.1);
 }
 
-.stat-card-body {
+.stat-card-inner {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start; /* Để icon và title ngang hàng ở đỉnh */
 }
 
-.stat-info p {
-  color: var(--text-light);
+.stat-title {
+  color: #64748b; /* Màu xám slate hiện đại */
   font-size: 0.95rem;
-  font-weight: 500;
-  margin-bottom: 5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.stat-info h3 {
-  font-size: 1.8rem;
+.stat-value {
+  font-size: 1.75rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -1px;
 }
 
-.stat-icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px; /* Bo góc kiểu Squircle hiện đại */
+.stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  transition: transform 0.3s ease;
 }
 
-/* Soft Colors cho Cards */
-.red .stat-icon-box { background: #fff1f0; color: #ff4d4f; }
-.blue .stat-icon-box { background: #e6f7ff; color: #1890ff; }
-.green .stat-icon-box { background: #f6ffed; color: #52c41a; }
-.orange .stat-icon-box { background: #fff7e6; color: #ffa940; }
+.stat-card:hover .stat-icon-wrapper {
+  transform: rotate(-10deg) scale(1.1);
+}
 
-/* --- Dashboard Content Layout --- */
+/* Màu sắc chuẩn cho từng loại thẻ */
+.red .stat-icon-wrapper { background: #fee2e2; color: #ef4444; }
+.blue .stat-icon-wrapper { background: #e0f2fe; color: #0ea5e9; }
+.green .stat-icon-wrapper { background: #dcfce7; color: #22c55e; }
+.orange .stat-icon-wrapper { background: #ffedd5; color: #f59e0b; }
+
+/* Đường line màu nhỏ phía dưới để card trông bớt "trống" */
+.stat-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  opacity: 0.6;
+}
+.red .stat-indicator { background: var(--gradient-red); }
+.blue .stat-indicator { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+.green .stat-indicator { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.orange .stat-indicator { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+/* --- Dashboard Content --- */
 .dashboard-content {
   display: grid;
   grid-template-columns: 1.8fr 1.2fr;
@@ -164,35 +245,110 @@
   margin-bottom: 25px;
 }
 
-.card-header h3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-main);
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
+.chart-filter {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-family: 'Cabin';
+  font-size: 0.85rem;
+  color: var(--text-main);
+  outline: none;
+}
+
+.chart-container {
+  height: 350px;
+  position: relative;
+}
+
+/* Recent Orders List */
 .btn-view-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--primary-color);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  transition: var(--transition);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: 0.3s;
 }
 
 .btn-view-all:hover {
   background: var(--red-light);
+  transform: translateX(3px);
 }
 
-/* List Item tinh chỉnh */
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #f0f2f5;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.order-item:last-child { border: none; }
+.order-item:hover {
+  background: #fafafa;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: -10px;
+  margin-right: -10px;
+  border-radius: 12px;
+}
 
-.order-info strong { font-size: 0.95rem; color: var(--text-main); }
-.order-info span { font-size: 0.85rem; color: var(--text-light); margin-left: 8px; }
+.order-id {
+  font-family: monospace;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  margin-right: 10px;
+}
+
+.customer-name {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.order-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.order-amount {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+/* --- Status Pills (Đồng bộ hệ thống) --- */
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-pill.pending { background: #fff7e6; color: #faad14; }
+.status-pill.processing { background: #e6f7ff; color: #1890ff; }
+.status-pill.shipping { background: #f9f0ff; color: #722ed1; }
+.status-pill.success { background: #f6ffed; color: #52c41a; }
+.status-pill.cancelled { background: #fff1f0; color: #ff4d4f; }
+.status-pill.default { background: #f5f5f5; color: #8c8c8c; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
+}

@@ -32,16 +32,32 @@ router.post('/place', async (req, res) => {
 
         const orderId = orderResult.insertId;
 
-        // --- BƯỚC 2: CHÈN VÀO ORDER_ITEMS & CẬP NHẬT KHO ---
-        const itemQuery = `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`;
-        const updateStockQuery = `UPDATE products SET stock = stock - ? WHERE id = ?`;
+       // --- BƯỚC 2: CHÈN VÀO ORDER_ITEMS & CẬP NHẬT KHO ---
+            const itemQuery = `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`;
+            const updateStockQuery = `UPDATE products SET stock = stock - ? WHERE id = ?`;
 
-        for (const item of items) {
-            const pId = item.product_id; 
-            await connection.execute(itemQuery, [orderId, pId, item.quantity, item.price]);
-            await connection.execute(updateStockQuery, [item.quantity, pId]);
-        }
+            for (const item of items) {
+                // 1. Lấy ID sản phẩm (linh hoạt giữa product_id hoặc id)
+                const pId = item.product_id || item.id; 
+                
+                // 2. Lấy giá từ Frontend gửi lên (đây là giá đã áp dụng Flash Sale/Member)
+                // Nếu price_at_purchase không tồn tại thì mới dùng item.price làm dự phòng
+                const pPrice = item.price_at_purchase !== undefined ? item.price_at_purchase : item.price;
+                
+                const pQty = item.quantity;
 
+                // Kiểm tra an toàn để tránh lỗi "Bind parameters must not contain undefined"
+                if (!pId || pPrice === undefined || !pQty) {
+                    console.error("Dữ liệu item không hợp lệ:", item);
+                    throw new Error(`Sản phẩm ${item.name || pId} thiếu thông tin giá hoặc ID.`);
+                }
+
+                // Thực thi chèn dữ liệu vào bảng order_items
+                await connection.execute(itemQuery, [orderId, pId, pQty, pPrice]);
+                
+                // Cập nhật giảm số lượng tồn kho
+                await connection.execute(updateStockQuery, [pQty, pId]);
+            }
         // --- BƯỚC 3: XÓA GIỎ HÀNG SAU KHI ĐẶT ---
         const [cart] = await connection.execute('SELECT id FROM carts WHERE user_id = ?', [userId]);
         if (cart.length > 0) {

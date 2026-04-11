@@ -13,8 +13,11 @@ router.get('/', async (req, res) => {
         `);
 
         const ordersWithProducts = await Promise.all(orders.map(async (order) => {
-            const [products] = await db.execute(`
-                SELECT oi.*, p.name as product_name 
+           const [products] = await db.execute(`
+                SELECT 
+                    oi.*, 
+                    p.name as product_name, 
+                    p.image -- THÊM DÒNG NÀY VÀO ĐÂY
                 FROM order_items oi
                 JOIN products p ON oi.product_id = p.id
                 WHERE oi.order_id = ?
@@ -52,7 +55,6 @@ router.put('/update-status/:id', async (req, res) => {
         await db.execute(sql, [status, id]);
         
         // 2. Logic tự động cập nhật thanh toán
-        // Lưu ý: Trong ảnh của bạn payment_status đang là 'paid' (viết thường), mình sẽ để 'paid' cho khớp
         if (status === 'delivered') {
             await db.execute(`UPDATE orders SET payment_status = 'paid' WHERE id = ?`, [id]);
         }

@@ -1,0 +1,258 @@
+/* ReviewManagement.css */
+
+/* --- LAYOUT CHÍNH --- */
+.rev-admin-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-light);
+}
+
+.rev-admin-main {
+    flex: 1;
+    /* Đẩy nội dung sang phải để không bị Sidebar (fixed/absolute) che mất */
+    margin-left: var(--sidebar-width); 
+    width: calc(100% - var(--sidebar-width)); 
+    padding: 30px;
+    min-width: 0; /* Ngăn chặn nội dung làm vỡ layout flex */
+    transition: var(--transition);
+}
+
+/* --- HEADER --- */
+.rev-page-header {
+    margin-bottom: 25px;
+}
+
+.rev-page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+}
+
+.rev-page-header p {
+    color: var(--text-light);
+    margin-top: 5px;
+    font-size: 15px;
+}
+
+/* --- BỘ LỌC (FILTER) --- */
+.rev-filter-section {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 25px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.rev-filter-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap; /* Tự xuống dòng trên màn hình nhỏ */
+}
+
+.rev-search-wrapper {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    align-items: center;
+    background: var(--bg-light);
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    gap: 10px;
+    border: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.rev-search-wrapper:focus-within {
+    border-color: var(--primary-color);
+    background: var(--white);
+    box-shadow: var(--glow-red);
+}
+
+.rev-search-wrapper input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    font-family: var(--font-main);
+    color: var(--text-main);
+    font-size: 14px;
+}
+
+.rev-filter-group select {
+    padding: 12px 15px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--white);
+    font-family: var(--font-main);
+    color: var(--text-main);
+    cursor: pointer;
+    min-width: 160px;
+    outline: none;
+    transition: var(--transition);
+}
+
+.rev-filter-group select:focus {
+    border-color: var(--primary-color);
+}
+
+.rev-btn-reset {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: var(--red-light);
+    color: var(--primary-color);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rev-btn-reset:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    transform: rotate(-15deg);
+}
+
+/* --- DANH SÁCH & BẢNG --- */
+.rev-content-wrapper {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.rev-table-responsive {
+    overflow-x: auto; /* Tạo thanh cuộn ngang nếu bảng quá rộng */
+    width: 100%;
+}
+
+.rev-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px; /* Đảm bảo bảng không bị quá hẹp */
+}
+
+.rev-admin-table th {
+    text-align: left;
+    padding: 15px;
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--bg-light);
+}
+
+.rev-table-row {
+    transition: var(--transition);
+}
+
+.rev-table-row:hover {
+    background-color: var(--bg-light);
+}
+
+.rev-admin-table td {
+    padding: 18px 15px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+/* --- CHI TIẾT CÁC Ô (CELLS) --- */
+.rev-user-cell, .rev-product-cell, .rev-date-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.rev-product-name {
+    color: var(--primary-color);
+    font-weight: 600;
+    display: block;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rev-rating-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.rev-comment-cell p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-main);
+    line-height: 1.6;
+    max-width: 350px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Giới hạn 2 dòng cho nội dung quá dài */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- NÚT XÓA --- */
+.rev-btn-delete {
+    color: var(--text-light);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rev-btn-delete:hover {
+    color: var(--danger);
+    background: var(--red-light);
+    transform: scale(1.1) translateY(-2px);
+}
+
+/* --- TRẠNG THÁI TRỐNG & LOADING --- */
+.rev-empty-state {
+    text-align: center;
+    padding: 100px 0;
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.rev-loading {
+    text-align: center;
+    padding: 50px;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+    .rev-admin-main {
+        margin-left: var(--sidebar-width); /* Tự động theo 80px từ root */
+        width: calc(100% - var(--sidebar-width));
+        padding: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .rev-admin-main {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .rev-page-header h1 {
+        font-size: 24px;
+    }
+    
+    .rev-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

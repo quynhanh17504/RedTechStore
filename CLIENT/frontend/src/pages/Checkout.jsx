@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package, Zap, Award, Phone, MapPin } from 'lucide-react';
+import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package, Zap, Award } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import './Checkout.css';
@@ -32,11 +32,9 @@ const Checkout = () => {
 
         const fetchCart = async () => {
             try {
-                // API này đã được JOIN để lấy discount_percent và rank_name ở Backend
                 const res = await axios.get(`http://localhost:3005/client/cart/${userId}`);
                 setCartItems(res.data);
                 
-                // Nếu giỏ hàng trống mà không phải vừa đặt hàng xong thì quay về giỏ hàng
                 if (res.data.length === 0 && !isSuccess) {
                     navigate('/cart');
                 }
@@ -51,16 +49,14 @@ const Checkout = () => {
         fetchCart();
     }, [userId, navigate, isSuccess]);
 
-    // 3. Logic tính toán tổng tiền (Sale + Member Discount)
+    // 3. Logic tính toán tổng tiền
     const { subtotal, discountPercent, memberDiscountAmount, finalTotal, rankName } = useMemo(() => {
-        // Tính tổng tiền dựa trên giá Flash Sale (nếu có)
         const st = cartItems.reduce((acc, item) => {
             const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
             const price = isSale ? item.discount_price : item.price;
             return acc + (Number(price) * item.quantity);
         }, 0);
 
-        // Lấy chiết khấu từ API (đã JOIN bảng rank_configs)
         const dPercent = cartItems.length > 0 ? (cartItems[0].discount_percent || 0) : 0;
         const rName = cartItems.length > 0 ? (cartItems[0].rank_name || "Thành viên") : "Thành viên";
         const dAmount = Math.round(st * (dPercent / 100));
@@ -93,7 +89,7 @@ const Checkout = () => {
             const orderData = {
                 userId,
                 ...formData,
-                totalPrice: finalTotal, // Giá cuối cùng đã trừ hết các loại giảm giá
+                totalPrice: finalTotal,
                 discountAmount: memberDiscountAmount,
                 items: cartItems.map(item => ({
                     product_id: item.product_id,
@@ -107,13 +103,17 @@ const Checkout = () => {
             toast.success("Đặt hàng thành công!", { id: loadingToast });
             setIsSuccess(true);
             
-            // Kích hoạt sự kiện để Navbar cập nhật lại số lượng giỏ hàng (về 0)
             window.dispatchEvent(new Event('cartUpdated'));
             
         } catch (err) {
             console.error(err);
             toast.error(err.response?.data?.message || "Lỗi khi đặt hàng", { id: loadingToast });
         }
+    };
+
+    // Hàm điều hướng về tab đơn hàng trong Profile
+    const handleViewOrders = () => {
+        navigate('/profile', { state: { activeTab: 'orders' } });
     };
 
     if (loading) return <div className="loading-screen" style={{fontFamily: 'Cabin', textAlign: 'center', padding: '100px'}}>Đang chuẩn bị đơn hàng...</div>;
@@ -129,7 +129,8 @@ const Checkout = () => {
                     <p>Mã đơn hàng của bạn đã được hệ thống ghi nhận.</p>
                     <p>Cảm ơn <strong>{formData.fullname}</strong> đã tin tưởng <strong>RedTech</strong>.</p>
                     <div className="success-actions">
-                        <button onClick={() => navigate('/my-orders')} className="btn-success-view">
+                        {/* Cập nhật nút Xem đơn hàng sử dụng hàm handleViewOrders */}
+                        <button onClick={handleViewOrders} className="btn-success-view">
                             <Package size={20} /> Xem đơn hàng
                         </button>
                         <button onClick={() => navigate('/')} className="btn-success-home">
@@ -151,7 +152,6 @@ const Checkout = () => {
                     <h1>THANH TOÁN ĐƠN HÀNG</h1>
                 </div>
 
-               
                 <form className="checkout-layout" onSubmit={handlePlaceOrder}>
                     <div className="checkout-form-section">
                         <div className="checkout-card">
@@ -172,7 +172,6 @@ const Checkout = () => {
                             </div>
                         </div>
 
-                        {/* Khối phương thức thanh toán */}
                         <div className="checkout-card">
                             <h2 className="card-title"><CreditCard size={20} /> Phương thức thanh toán</h2>
                             <div className="payment-options">
@@ -194,7 +193,6 @@ const Checkout = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar tóm tắt đơn hàng */}
                     <aside className="checkout-summary-section">
                         <div className="summary-sticky-card">
                             <h3>TÓM TẮT ĐƠN HÀNG</h3>

@@ -8,6 +8,8 @@ import BrandManagement from './pages/BrandManagement';
 import ProductMangement from './pages/ProductManagement';
 import CategoryManagement from './pages/CategoryManagement';
 import OrderManagement from './pages/OrderManagement';
+import AdminReview from './pages/ReviewManagement';
+
 import './App.css';
 
 // Component bảo vệ Route (Chặn khách vãng lai)
@@ -32,7 +34,7 @@ function App() {
         <Route path="/admin/categories" element={<PrivateRoute><CategoryManagement /></PrivateRoute>} />
         <Route path="/admin/orders" element={<PrivateRoute><OrderManagement /></PrivateRoute>} />
         <Route path="/admin/brands" element={<PrivateRoute><BrandManagement /></PrivateRoute>} />
-        <Route path="/admin/reviews" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/admin/reviews" element={<PrivateRoute><AdminReview /></PrivateRoute>} />
         {/* --- ĐIỀU HƯỚNG MẶC ĐỊNH --- */}
         {/* Nếu vào trang chủ / thì tự chuyển về login */}
         <Route path="/" element={<Navigate to="/admin/login" />} />

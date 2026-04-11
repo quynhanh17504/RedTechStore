@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Import thêm useLocation
 import { User, Mail, Lock, Save, CircleUserRound, ShoppingBag, CreditCard } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -7,6 +8,7 @@ import MemberCard from '../components/MemberCard';
 import './EditProfile.css';
 
 const EditProfile = () => {
+    const location = useLocation(); // Khởi tạo hook để lấy state từ navigate
     const [activeTab, setActiveTab] = useState('profile'); 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -22,11 +24,17 @@ const EditProfile = () => {
     const userStorage = JSON.parse(localStorage.getItem('user'));
     const userId = userStorage?.id;
 
+    // useEffect xử lý việc đổi tab khi nhận state từ trang khác (vd: Checkout)
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
+
     useEffect(() => {
         const fetchUserData = async () => {
             if (!userId) return;
             try {
-                // Gọi API profile (Đảm bảo Backend của Ngọc trả về đủ: fullname, email, member_rank, total_points)
                 const res = await axios.get(`http://localhost:3005/client/auth/profile/${userId}`);
                 setFormData(prev => ({
                     ...prev,
@@ -64,11 +72,9 @@ const EditProfile = () => {
 
             toast.success(res.data.message);
             
-            // Cập nhật lại localStorage để các Component khác (như Navbar) nhận diện tên mới
             const updatedUser = { ...userStorage, fullname: formData.fullName, email: formData.email };
             localStorage.setItem('user', JSON.stringify(updatedUser));
 
-            // Reset field mật khẩu
             setFormData(prev => ({
                 ...prev,
                 currentPassword: '',
@@ -76,7 +82,6 @@ const EditProfile = () => {
                 confirmPassword: ''
             }));
             
-            // Kích hoạt event để Navbar cập nhật lại hiển thị
             window.dispatchEvent(new Event('storage'));
         } catch (err) {
             toast.error(err.response?.data?.message || "Lỗi cập nhật dữ liệu");
@@ -219,7 +224,9 @@ const EditProfile = () => {
                             </form>
                         </div>
                     ) : (
-                        <MyOrders userId={userId} />
+                        <div className="tab-fade-in">
+                            <MyOrders userId={userId} />
+                        </div>
                     )}
                 </main>
             </div>

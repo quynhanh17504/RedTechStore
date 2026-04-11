@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
     ShoppingBag, Package, Calendar, ChevronRight, X, 
-    CreditCard, MapPin, Tag, Trash2, Clock 
+    CreditCard, MapPin, Tag, Trash2, Clock, Truck, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './MyOrders.css'; 
@@ -12,6 +12,9 @@ const MyOrders = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [modalLoading, setModalLoading] = useState(false);
+    
+    // State để điều khiển Modal xác nhận hủy
+    const [showCancelConfirm, setShowCancelConfirm] = useState(null); 
 
     const userStorage = JSON.parse(localStorage.getItem('user'));
     const userId = userStorage?.id;
@@ -30,17 +33,33 @@ const MyOrders = () => {
         }
     };
 
-    // Hàm lấy chi tiết một đơn hàng cụ thể từ API mới của bạn
     const handleViewDetail = async (orderId) => {
         setModalLoading(true);
         try {
             const res = await axios.get(`http://localhost:3005/client/order/detail/${orderId}`);
             setSelectedOrder(res.data);
         } catch (err) {
-            console.error("Lỗi lấy chi tiết đơn hàng:", err);
-            toast.error("Không thể lấy thông tin chi tiết đơn hàng");
+            toast.error("Không thể lấy thông tin chi tiết");
         } finally {
             setModalLoading(false);
+        }
+    };
+
+    // Hàm thực thi hủy đơn hàng sau khi xác nhận
+    const confirmCancelOrder = async () => {
+        const orderId = showCancelConfirm;
+        const loadingToast = toast.loading("Đang xử lý yêu cầu hủy...");
+        
+        try {
+            await axios.patch(`http://localhost:3005/client/order/cancel/${orderId}`);
+            toast.success("Đã hủy đơn hàng thành công", { id: loadingToast });
+            
+            // Đóng các modal và cập nhật lại dữ liệu
+            setShowCancelConfirm(null);
+            setSelectedOrder(null);
+            fetchMyOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Không thể hủy đơn hàng", { id: loadingToast });
         }
     };
 
@@ -48,24 +67,13 @@ const MyOrders = () => {
         fetchMyOrders();
     }, [userId]);
 
-    const handleCancelOrder = async (orderId) => {
-        if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
-        try {
-            await axios.patch(`http://localhost:3005/client/order/cancel/${orderId}`);
-            toast.success("Đã hủy đơn hàng thành công");
-            setSelectedOrder(null);
-            fetchMyOrders();
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Không thể hủy đơn hàng");
-        }
-    };
-
     const renderStatusBadge = (status) => {
         const statusMap = {
-            'pending': { label: 'Đang xử lý', class: 'status-pending', icon: <Clock size={12}/> },
-            'shipping': { label: 'Đang giao', class: 'status-shipping', icon: <Package size={12}/> },
-            'delivered': { label: 'Thành công', class: 'status-success', icon: <ChevronRight size={12}/> },
-            'cancelled': { label: 'Đã hủy', class: 'status-cancelled', icon: <X size={12}/> }
+            pending: { label: "Chờ xử lý", class: "status-pending", icon: <Clock size={12}/> },
+            processing: { label: "Đang chuẩn bị", class: "status-processing", icon: <Package size={12}/> },
+            shipped: { label: "Đang giao", class: "status-shipping", icon: <Truck size={12}/> },
+            delivered: { label: "Thành công", class: "status-success", icon: <CheckCircle size={12}/> },
+            cancelled: { label: "Đã hủy", class: "status-cancelled", icon: <XCircle size={12}/> }
         };
         const config = statusMap[status?.toLowerCase()] || { label: status, class: 'status-default', icon: null };
         return (
@@ -78,12 +86,12 @@ const MyOrders = () => {
     if (loading) return (
         <div className="orders-loading">
             <div className="spinner"></div>
-            <p style={{ fontFamily: 'Cabin, sans-serif' }}>Đang tải lịch sử đơn hàng...</p>
+            <p>Đang tải lịch sử đơn hàng...</p>
         </div>
     );
 
     return (
-        <div className="my-orders-wrapper" style={{ fontFamily: 'Cabin, sans-serif' }}>
+        <div className="my-orders-wrapper">
             <div className="content-header-minimal">
                 <h2>Lịch sử <span>mua hàng</span></h2>
                 <div className="order-count">{orders.length} đơn hàng</div>
@@ -132,6 +140,23 @@ const MyOrders = () => {
                 </div>
             )}
 
+            {/* --- MODAL XÁC NHẬN HỦY (CUSTOM CONFIRM) --- */}
+            {showCancelConfirm && (
+                <div className="confirm-modal-overlay">
+                    <div className="confirm-modal-card">
+                        <div className="confirm-icon">
+                            <AlertTriangle size={40} color="#dc3545" />
+                        </div>
+                        <h3>Xác nhận hủy đơn</h3>
+                        <p>Bạn có chắc chắn muốn hủy đơn hàng <b>#ORD-{showCancelConfirm}</b>? Hành động này không thể hoàn tác.</p>
+                        <div className="confirm-actions">
+                            <button className="btn-no" onClick={() => setShowCancelConfirm(null)}>Để tôi suy nghĩ lại</button>
+                            <button className="btn-yes" onClick={confirmCancelOrder}>Xác nhận hủy</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- MODAL CHI TIẾT --- */}
             {selectedOrder && (
                 <div className="order-modal-overlay" onClick={() => setSelectedOrder(null)}>
@@ -171,40 +196,21 @@ const MyOrders = () => {
                                         <div className="info-head"><Tag size={16} /> Sản phẩm đã mua</div>
                                         <div className="product-scroll-area">
                                             {selectedOrder.products?.map((item, index) => {
-                                                // --- LOGIC FIX LỖI ẢNH TẠI ĐÂY ---
                                                 let displayImg = "";
                                                 try {
-                                                    // Nếu item.image là chuỗi JSON mảng ["path/to/img.jpg"], ta lấy cái đầu tiên
                                                     const imgs = JSON.parse(item.image);
                                                     displayImg = Array.isArray(imgs) ? imgs[0] : item.image;
-                                                } catch (e) { 
-                                                    // Nếu không phải JSON (chuỗi thuần), giữ nguyên
-                                                    displayImg = item.image; 
-                                                }
-
-                                                // Đảm bảo đường dẫn có đầy đủ http://localhost:3005/
-                                                const fullImgUrl = displayImg.startsWith('http') 
-                                                    ? displayImg 
-                                                    : `http://localhost:3005/${displayImg}`;
+                                                } catch (e) { displayImg = item.image; }
+                                                const fullImgUrl = displayImg.startsWith('http') ? displayImg : `http://localhost:3005/${displayImg}`;
 
                                                 return (
                                                     <div className="product-row-item" key={index}>
-                                                        <img 
-                                                            src={fullImgUrl} 
-                                                            alt={item.name} 
-                                                            className="p-img" 
-                                                            onError={(e) => {
-                                                                e.target.onerror = null; 
-                                                                e.target.src = '/placeholder-product.png';
-                                                            }}
-                                                        />
+                                                        <img src={fullImgUrl} alt={item.name} className="p-img" />
                                                         <div className="p-details">
                                                             <p className="p-name">{item.name}</p>
                                                             <p className="p-qty">SL: {item.quantity} x {Number(item.price).toLocaleString('vi-VN')}đ</p>
                                                         </div>
-                                                        <div className="p-total">
-                                                            {(item.quantity * item.price).toLocaleString('vi-VN')}đ
-                                                        </div>
+                                                        <div className="p-total">{(item.quantity * item.price).toLocaleString('vi-VN')}đ</div>
                                                     </div>
                                                 );
                                             })}
@@ -212,10 +218,6 @@ const MyOrders = () => {
                                     </div>
 
                                     <div className="bill-summary">
-                                        <div className="bill-row">
-                                            <span>Tạm tính</span>
-                                            <span>{Number(selectedOrder.total_price).toLocaleString('vi-VN')}đ</span>
-                                        </div>
                                         <div className="bill-row total">
                                             <span>Tổng thanh toán</span>
                                             <span className="grand-total">{Number(selectedOrder.total_price).toLocaleString('vi-VN')}đ</span>
@@ -225,7 +227,7 @@ const MyOrders = () => {
 
                                 {selectedOrder.status === 'pending' && (
                                     <div className="modal-actions-bar">
-                                        <button className="btn-abort" onClick={() => handleCancelOrder(selectedOrder.id)}>
+                                        <button className="btn-abort" onClick={() => setShowCancelConfirm(selectedOrder.id)}>
                                             <Trash2 size={18} /> Hủy đơn hàng này
                                         </button>
                                     </div>

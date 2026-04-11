@@ -79,8 +79,6 @@ router.post('/place', async (req, res) => {
 
 /**
  * 2. API: Lấy danh sách đơn hàng của người dùng (User Side)
- * Đã sửa: Dùng Alias để khớp với Frontend 'total_price'
- * URL: http://localhost:3005/client/order/my-orders/:userId
  */
 router.get('/my-orders/:userId', async (req, res) => {
     const { userId } = req.params;
@@ -153,6 +151,63 @@ router.get('/detail/:orderId', async (req, res) => {
     } catch (err) {
         console.error("Lỗi lấy chi tiết đơn hàng:", err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * 4. API: Hủy đơn hàng 
+ */
+router.put('/cancel/:orderId', async (req, res) => {
+    const { orderId } = req.params;
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        // 1. Kiểm tra trạng thái đơn hàng hiện tại
+        const [orders] = await connection.execute(
+            'SELECT status FROM orders WHERE id = ?',
+            [orderId]
+        );
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+        }
+
+        const currentStatus = orders[0].status;
+
+        // Chỉ cho phép hủy nếu đơn hàng đang ở trạng thái 'pending'
+        if (currentStatus !== 'pending') {
+            return res.status(400).json({ 
+                message: "Chỉ có thể hủy đơn hàng khi đang ở trạng thái chờ xử lý (pending)." 
+            });
+        }
+
+        // 2. Lấy danh sách sản phẩm trong đơn để hoàn lại kho (Stock)
+        const [items] = await connection.execute(
+            'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+            [orderId]
+        );
+
+        // 3. Hoàn lại kho và Cập nhật trạng thái đơn hàng sang 'cancelled'
+        const updateStockQuery = `UPDATE products SET stock = stock + ? WHERE id = ?`;
+        for (const item of items) {
+            await connection.execute(updateStockQuery, [item.quantity, item.product_id]);
+        }
+
+        await connection.execute(
+            "UPDATE orders SET status = 'cancelled' WHERE id = ?",
+            [orderId]
+        );
+
+        await connection.commit();
+        res.json({ message: "Hủy đơn hàng thành công và đã hoàn lại số lượng kho." });
+
+    } catch (err) {
+        await connection.rollback();
+        console.error("Lỗi khi hủy đơn hàng:", err);
+        res.status(500).json({ message: "Lỗi hệ thống khi hủy đơn hàng", error: err.message });
+    } finally {
+        connection.release();
     }
 });
 

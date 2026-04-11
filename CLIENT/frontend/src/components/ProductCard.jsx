@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Eye, Heart, Zap } from 'lucide-react'; // Thêm Zap cho Flash Sale
+import { ShoppingCart, Eye, Heart, Zap } from 'lucide-react'; 
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './ProductCard.css';
@@ -94,7 +94,7 @@ const ProductCard = ({ product }) => {
 
       <div className="product-content">
         <div className="cat-with-flash">
-            <p className="product-category">{product.category_name || "THIẾT BỊ SỐ"}</p>
+            <p className="product-category">{product.category_name}</p>
             {hasDiscount && <Zap size={14} color="#ff4d4d" fill="#ff4d4d" />}
         </div>
         

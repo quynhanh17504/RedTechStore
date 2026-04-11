@@ -51,7 +51,7 @@ const MyOrders = () => {
         const loadingToast = toast.loading("Đang xử lý yêu cầu hủy...");
         
         try {
-            await axios.patch(`http://localhost:3005/client/order/cancel/${orderId}`);
+            await axios.put(`http://localhost:3005/client/order/cancel/${orderId}`);
             toast.success("Đã hủy đơn hàng thành công", { id: loadingToast });
             
             // Đóng các modal và cập nhật lại dữ liệu

@@ -2,11 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// API lấy danh sách sản phẩm (Có tích hợp Tìm kiếm & Lọc)
+// API lấy danh sách sản phẩm (Có tích hợp Tìm kiếm & Lọc) - ĐÃ OK
 router.get('/', async (req, res) => {
-    // 1. Lấy từ khóa search từ query string (?search=...)
     const { search } = req.query;
-
     try {
         let query = `
             SELECT p.*, c.name as category_name, b.name as brand_name 
@@ -14,10 +12,7 @@ router.get('/', async (req, res) => {
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
         `;
-        
         let params = [];
-
-        // 2. Nếu có từ khóa tìm kiếm, thêm điều kiện WHERE
         if (search) {
             query += ` 
                 WHERE p.name LIKE ? 
@@ -28,25 +23,22 @@ router.get('/', async (req, res) => {
             const searchTerm = `%${search}%`;
             params = [searchTerm, searchTerm, searchTerm, searchTerm];
         }
-
-        // 3. Sắp xếp sản phẩm mới nhất lên đầu
         query += ` ORDER BY p.id DESC`;
-
         const [rows] = await db.execute(query, params);
         res.json(rows);
     } catch (err) {
-        console.error("Lỗi API lấy danh sách sản phẩm:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// 2. API FLASH SALE: Lấy sản phẩm có is_flash_sale = 1
+// 2. API FLASH SALE
 router.get('/flash-sale', async (req, res) => {
     try {
         const query = `
-            SELECT p.*, b.name as brand_name 
+            SELECT p.*, b.name as brand_name, c.name as category_name 
             FROM products p
             LEFT JOIN brands b ON p.brand_id = b.id
+            LEFT JOIN categories c ON p.category_id = c.id
             WHERE p.is_flash_sale = 1 AND p.stock > 0
             LIMIT 4
         `;
@@ -57,14 +49,16 @@ router.get('/flash-sale', async (req, res) => {
     }
 });
 
-// 3. API BÁN CHẠY: Lấy sản phẩm có số lượng bán nhiều nhất từ bảng order_items
+// 3. API BÁN CHẠY
 router.get('/best-sellers', async (req, res) => {
     try {
         const query = `
-            SELECT p.*, SUM(oi.quantity) as total_sold
+            SELECT p.*, c.name as category_name, b.name as brand_name, SUM(oi.quantity) as total_sold
             FROM products p
             JOIN order_items oi ON p.id = oi.product_id
             JOIN orders o ON oi.order_id = o.id
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN brands b ON p.brand_id = b.id
             WHERE o.status = 'delivered'
             GROUP BY p.id
             ORDER BY total_sold DESC
@@ -72,9 +66,15 @@ router.get('/best-sellers', async (req, res) => {
         `;
         const [rows] = await db.execute(query);
         
-        // Nếu chưa có đơn hàng nào 'delivered', trả về 4 sản phẩm mới nhất để tránh trắng trang
         if (rows.length === 0) {
-            const [backupRows] = await db.execute('SELECT * FROM products ORDER BY id DESC LIMIT 4');
+            // Backup query cũng cần JOIN để hiển thị đẹp
+            const [backupRows] = await db.execute(`
+                SELECT p.*, c.name as category_name, b.name as brand_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN brands b ON p.brand_id = b.id
+                ORDER BY p.id DESC LIMIT 4
+            `);
             return res.json(backupRows);
         }
         
@@ -84,14 +84,11 @@ router.get('/best-sellers', async (req, res) => {
     }
 });
 
-// API: Lấy chi tiết 1 sản phẩm theo ID (Giữ nguyên logic của bạn nhưng tối ưu hơn)
+// API: Lấy chi tiết 1 sản phẩm theo ID 
 router.get('/:id', async (req, res) => {
     try {
         const query = `
-            SELECT 
-                p.*, 
-                b.name as brand_name, 
-                c.name as category_name 
+            SELECT p.*, b.name as brand_name, c.name as category_name 
             FROM products p
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN categories c ON p.category_id = c.id
@@ -105,7 +102,6 @@ router.get('/:id', async (req, res) => {
 
         const product = rows[0];
 
-        // Parse dữ liệu JSON an toàn để tránh lỗi crash server
         try {
             if (product.specifications && typeof product.specifications === 'string') {
                 product.specifications = JSON.parse(product.specifications);
@@ -114,12 +110,11 @@ router.get('/:id', async (req, res) => {
                 product.image = JSON.parse(product.image);
             }
         } catch (e) {
-            console.warn("Dữ liệu specifications hoặc image không phải JSON hợp lệ:", e.message);
+            console.warn("Lỗi parse JSON:", e.message);
         }
 
         res.json(product);
     } catch (err) {
-        console.error("Lỗi lấy chi tiết sản phẩm:", err);
         res.status(500).json({ error: err.message });
     }
 });

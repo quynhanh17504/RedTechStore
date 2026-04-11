@@ -1,44 +1,50 @@
 import React from 'react';
-import { Award, Star, ShieldCheck } from 'lucide-react';
+import { Award, Star, ShieldCheck, Zap } from 'lucide-react';
 import './MemberCard.css';
 
 const MemberCard = ({ user }) => {
-    // Logic xác định màu thẻ dựa trên Rank
-    const getRankStyle = (rank) => {
-        switch (rank?.toLowerCase()) {
-            case 'gold': return 'card-gold';
-            case 'silver': return 'card-silver';
-            default: return 'card-standard';
-        }
+    const getRankClass = (rank) => {
+        const r = rank?.toLowerCase();
+        if (r === 'silver') return 'card-silver';
+        if (r === 'gold') return 'card-gold';
+        if (r === 'platinum') return 'card-platinum';
+        return 'card-standard'; 
     };
 
     return (
-        <div className={`redtech-card ${getRankStyle(user.member_rank)}`}>
+        <div className={`redtech-card ${getRankClass(user.member_rank)}`}>
             <div className="card-header">
-                <div className="brand-logo">RedTech <span>Store</span></div>
-                <div className="rank-badge">
-                    <Award size={16} /> {user.member_rank || 'Member'}
+                <div className="card-brand-logo">RedTech <span>Store</span></div>
+                <div className="card-rank-badge">
+                    {user.member_rank === 'Platinum' ? <Zap size={14} /> : <Award size={14} />}
+                    <span className="card-rank-name">{user.member_rank || 'Member'}</span>
                 </div>
             </div>
 
             <div className="card-body">
-                <p className="label">Chủ thẻ</p>
-                <h2 className="user-name">{user.fullname}</h2>
-                <p className="user-email">{user.email}</p>
+                <div className="card-user-info">
+                    <p className="card-label">Chủ thẻ</p>
+                    <h2 className="card-user-name">{user.fullname || 'Khách hàng'}</h2>
+                    <p className="card-user-email">{user.email}</p>
+                </div>
             </div>
 
             <div className="card-footer">
-                <div className="points-info">
-                    <Star size={18} color="#ffd700" fill="#ffd700" />
-                    <span>{user.total_points || 0} Điểm tích lũy</span>
+                <div className="card-points-info">
+                    <Star 
+                        size={18} 
+                        color={user.member_rank === 'Gold' ? '#443405' : '#ffd700'} 
+                        fill={user.member_rank === 'Gold' ? '#443405' : '#ffd700'} 
+                    />
+                    <span>{Number(user.total_points || 0).toLocaleString()} Điểm tích lũy</span>
                 </div>
-                <div className="verify-icon">
+                <div className="card-verify-icon">
                     <ShieldCheck size={24} />
                 </div>
             </div>
             
-            {/* Hiệu ứng bóng mờ trang trí */}
             <div className="card-bg-circle"></div>
+            <div className="card-shine"></div>
         </div>
     );
 };

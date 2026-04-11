@@ -1,99 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package, Zap } from 'lucide-react';
+import { ChevronLeft, CreditCard, User, CheckCircle, Home, Package, Zap, Award, Phone, MapPin } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import './Checkout.css';
 
 const Checkout = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user'));
-    const userId = user?.id;
+    
+    // 1. Lấy thông tin User từ LocalStorage
+    const userLocal = JSON.parse(localStorage.getItem('user'));
+    const userId = userLocal?.id;
 
     const [cartItems, setCartItems] = useState([]);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [loading, setLoading] = useState(true);
+    
     const [formData, setFormData] = useState({
-        fullname: user?.fullname || '',
+        fullname: userLocal?.fullname || '',
         phone: '',
         address: '',
         paymentMethod: 'COD'
     });
 
+    // 2. Fetch dữ liệu giỏ hàng khi vào trang
     useEffect(() => {
         if (!userId) {
             navigate('/login');
             return;
         }
+
         const fetchCart = async () => {
             try {
-                // Sử dụng API đã được JOIN với bảng products để có discount_price
+                // API này đã được JOIN để lấy discount_percent và rank_name ở Backend
                 const res = await axios.get(`http://localhost:3005/client/cart/${userId}`);
                 setCartItems(res.data);
-                if (res.data.length === 0 && !isSuccess) navigate('/cart');
+                
+                // Nếu giỏ hàng trống mà không phải vừa đặt hàng xong thì quay về giỏ hàng
+                if (res.data.length === 0 && !isSuccess) {
+                    navigate('/cart');
+                }
             } catch (err) {
-                console.error(err);
+                console.error("Lỗi lấy giỏ hàng checkout:", err);
+                toast.error("Không thể tải thông tin thanh toán");
+            } finally {
+                setLoading(false);
             }
         };
+
         fetchCart();
     }, [userId, navigate, isSuccess]);
+
+    // 3. Logic tính toán tổng tiền (Sale + Member Discount)
+    const { subtotal, discountPercent, memberDiscountAmount, finalTotal, rankName } = useMemo(() => {
+        // Tính tổng tiền dựa trên giá Flash Sale (nếu có)
+        const st = cartItems.reduce((acc, item) => {
+            const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
+            const price = isSale ? item.discount_price : item.price;
+            return acc + (Number(price) * item.quantity);
+        }, 0);
+
+        // Lấy chiết khấu từ API (đã JOIN bảng rank_configs)
+        const dPercent = cartItems.length > 0 ? (cartItems[0].discount_percent || 0) : 0;
+        const rName = cartItems.length > 0 ? (cartItems[0].rank_name || "Thành viên") : "Thành viên";
+        const dAmount = Math.round(st * (dPercent / 100));
+
+        return {
+            subtotal: st,
+            discountPercent: dPercent,
+            memberDiscountAmount: dAmount,
+            finalTotal: st - dAmount,
+            rankName: rName
+        };
+    }, [cartItems]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // LOGIC TÍNH TỔNG MỚI: Ưu tiên giá Flash Sale
-    const calculateSubtotal = () => {
-        return cartItems.reduce((acc, item) => {
-            const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
-            const finalPrice = isSale ? item.discount_price : item.price;
-            return acc + (finalPrice * item.quantity);
-        }, 0);
-    };
-
-    const subtotal = calculateSubtotal();
-
+    // 4. Xử lý đặt hàng
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
-        const loading = toast.loading("Đang xử lý đơn hàng...");
+        
+        if (!formData.phone || !formData.address) {
+            toast.error("Vui lòng nhập đầy đủ thông tin giao hàng");
+            return;
+        }
+
+        const loadingToast = toast.loading("Đang xử lý đơn hàng...");
 
         try {
-            // Chuẩn bị dữ liệu items với giá đã chốt (đã tính sale) để lưu vào chi tiết hóa đơn
-            const finalizedItems = cartItems.map(item => {
-                const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
-                return {
-                    ...item,
-                    finalPrice: isSale ? item.discount_price : item.price
-                };
-            });
-
             const orderData = {
                 userId,
                 ...formData,
-                totalPrice: subtotal,
-                items: finalizedItems 
+                totalPrice: finalTotal, // Giá cuối cùng đã trừ hết các loại giảm giá
+                discountAmount: memberDiscountAmount,
+                items: cartItems.map(item => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    price_at_purchase: item.is_flash_sale === 1 && item.discount_price > 0 ? item.discount_price : item.price
+                }))
             };
 
             await axios.post('http://localhost:3005/client/order/place', orderData);
 
-            toast.success("Đặt hàng thành công!", { id: loading });
+            toast.success("Đặt hàng thành công!", { id: loadingToast });
             setIsSuccess(true);
+            
+            // Kích hoạt sự kiện để Navbar cập nhật lại số lượng giỏ hàng (về 0)
             window.dispatchEvent(new Event('cartUpdated'));
             
         } catch (err) {
-            toast.error(err.response?.data?.message || "Lỗi khi đặt hàng", { id: loading });
+            console.error(err);
+            toast.error(err.response?.data?.message || "Lỗi khi đặt hàng", { id: loadingToast });
         }
     };
+
+    if (loading) return <div className="loading-screen" style={{fontFamily: 'Cabin', textAlign: 'center', padding: '100px'}}>Đang chuẩn bị đơn hàng...</div>;
 
     if (isSuccess) {
         return (
             <div className="checkout-success-container" style={{ fontFamily: 'Cabin, sans-serif' }}>
                 <div className="success-card">
-                    <CheckCircle size={80} color="#22c55e" className="success-icon" />
-                    <h2>Đặt hàng thành công!</h2>
-                    <p>Cảm ơn bạn đã tin tưởng <strong>RedTech</strong>. Đơn hàng của bạn đang được xử lý và sẽ sớm được giao đến bạn.</p>
+                    <div className="success-icon-wrapper">
+                        <CheckCircle size={80} color="#22c55e" />
+                    </div>
+                    <h2>ĐẶT HÀNG THÀNH CÔNG!</h2>
+                    <p>Mã đơn hàng của bạn đã được hệ thống ghi nhận.</p>
+                    <p>Cảm ơn <strong>{formData.fullname}</strong> đã tin tưởng <strong>RedTech</strong>.</p>
                     <div className="success-actions">
                         <button onClick={() => navigate('/my-orders')} className="btn-success-view">
-                            <Package size={20} /> Xem đơn hàng của tôi
+                            <Package size={20} /> Xem đơn hàng
                         </button>
                         <button onClick={() => navigate('/')} className="btn-success-home">
                             <Home size={20} /> Về trang chủ
@@ -106,14 +143,15 @@ const Checkout = () => {
 
     return (
         <div className="checkout-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
-            <div className="container">
+            <div className="container section-padding">
                 <div className="checkout-header">
                     <Link to="/cart" className="back-to-cart">
                         <ChevronLeft size={20} /> Quay lại giỏ hàng
                     </Link>
-                    <h1>THANH TOÁN</h1>
+                    <h1>THANH TOÁN ĐƠN HÀNG</h1>
                 </div>
 
+               
                 <form className="checkout-layout" onSubmit={handlePlaceOrder}>
                     <div className="checkout-form-section">
                         <div className="checkout-card">
@@ -134,6 +172,7 @@ const Checkout = () => {
                             </div>
                         </div>
 
+                        {/* Khối phương thức thanh toán */}
                         <div className="checkout-card">
                             <h2 className="card-title"><CreditCard size={20} /> Phương thức thanh toán</h2>
                             <div className="payment-options">
@@ -141,35 +180,35 @@ const Checkout = () => {
                                     <input type="radio" name="paymentMethod" value="COD" checked={formData.paymentMethod === 'COD'} onChange={handleChange} />
                                     <div className="payment-info">
                                         <strong>Thanh toán khi nhận hàng (COD)</strong>
-                                        <span>Giao hàng tận nơi, nhận hàng rồi mới trả tiền.</span>
+                                        <span>Bạn sẽ thanh toán bằng tiền mặt khi shipper giao hàng đến.</span>
                                     </div>
                                 </label>
                                 <label className={`payment-item ${formData.paymentMethod === 'Transfer' ? 'active' : ''}`}>
                                     <input type="radio" name="paymentMethod" value="Transfer" checked={formData.paymentMethod === 'Transfer'} onChange={handleChange} />
                                     <div className="payment-info">
-                                        <strong>Chuyển khoản ngân hàng</strong>
-                                        <span>Quét mã QR qua App ngân hàng.</span>
+                                        <strong>Chuyển khoản Ngân hàng / Momo</strong>
+                                        <span>Chuyển khoản nhanh qua mã QR (Xử lý ưu tiên).</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
                     </div>
 
+                    {/* Sidebar tóm tắt đơn hàng */}
                     <aside className="checkout-summary-section">
                         <div className="summary-sticky-card">
-                            <h3>ĐƠN HÀNG CỦA BẠN</h3>
+                            <h3>TÓM TẮT ĐƠN HÀNG</h3>
                             <div className="checkout-items-list">
                                 {cartItems.map(item => {
                                     const isSale = item.is_flash_sale === 1 && item.discount_price > 0;
                                     const currentPrice = isSale ? item.discount_price : item.price;
-                                    
                                     return (
                                         <div key={item.item_id} className="checkout-item-mini">
                                             <div className="mini-info">
-                                                <span className="mini-qty">{item.quantity}x</span>
+                                                <span className="mini-qty">{item.quantity}×</span>
                                                 <div className="mini-name-wrapper">
                                                     <span className="mini-name">{item.name}</span>
-                                                    {isSale && <span className="mini-sale-tag"><Zap size={10} fill="currentColor"/> Sale</span>}
+                                                    {isSale && <span className="mini-sale-tag"><Zap size={10} fill="currentColor"/> Flash Sale</span>}
                                                 </div>
                                             </div>
                                             <span className="mini-price">{(currentPrice * item.quantity).toLocaleString()}đ</span>
@@ -177,11 +216,40 @@ const Checkout = () => {
                                     );
                                 })}
                             </div>
-                            <hr />
-                            <div className="summary-row"><span>Tạm tính</span><span>{subtotal.toLocaleString()}đ</span></div>
-                            <div className="summary-row"><span>Phí vận chuyển</span><span className="free">Miễn phí</span></div>
-                            <div className="summary-row total-row"><span>TỔNG CỘNG</span><span className="final-price">{subtotal.toLocaleString()}đ</span></div>
-                            <button type="submit" className="btn-place-order">XÁC NHẬN ĐẶT HÀNG</button>
+                            
+                            <div className="summary-calculations">
+                                <div className="summary-row">
+                                    <span>Tạm tính</span>
+                                    <span>{subtotal.toLocaleString()}đ</span>
+                                </div>
+
+                                {discountPercent > 0 && (
+                                    <div className="summary-row member-discount-row">
+                                        <span className="discount-label">
+                                            <Award size={16} /> Ưu đãi {rankName} (-{discountPercent}%)
+                                        </span>
+                                        <span className="discount-value">-{memberDiscountAmount.toLocaleString()}đ</span>
+                                    </div>
+                                )}
+
+                                <div className="summary-row">
+                                    <span>Phí giao hàng</span>
+                                    <span className="free">Miễn phí</span>
+                                </div>
+                                
+                                <div className="summary-row total-row">
+                                    <span>TỔNG CỘNG</span>
+                                    <span className="final-grand-total">{finalTotal.toLocaleString()}đ</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" className="btn-place-order">
+                                XÁC NHẬN THANH TOÁN
+                            </button>
+                            
+                            <p className="checkout-note">
+                                Bằng cách đặt hàng, bạn đồng ý với các điều khoản dịch vụ của RedTech.
+                            </p>
                         </div>
                     </aside>
                 </form>

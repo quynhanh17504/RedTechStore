@@ -170,23 +170,44 @@ const MyOrders = () => {
                                     <div className="product-list-container">
                                         <div className="info-head"><Tag size={16} /> Sản phẩm đã mua</div>
                                         <div className="product-scroll-area">
-                                            {selectedOrder.products?.map((item, index) => (
-                                                <div className="product-row-item" key={index}>
-                                                    <img 
-                                                        src={`http://localhost:3005/${item.image}`} 
-                                                        alt={item.name} 
-                                                        className="p-img" 
-                                                        onError={(e) => e.target.src = '/placeholder-product.png'}
-                                                    />
-                                                    <div className="p-details">
-                                                        <p className="p-name">{item.name}</p>
-                                                        <p className="p-qty">SL: {item.quantity} x {Number(item.price).toLocaleString('vi-VN')}đ</p>
+                                            {selectedOrder.products?.map((item, index) => {
+                                                // --- LOGIC FIX LỖI ẢNH TẠI ĐÂY ---
+                                                let displayImg = "";
+                                                try {
+                                                    // Nếu item.image là chuỗi JSON mảng ["path/to/img.jpg"], ta lấy cái đầu tiên
+                                                    const imgs = JSON.parse(item.image);
+                                                    displayImg = Array.isArray(imgs) ? imgs[0] : item.image;
+                                                } catch (e) { 
+                                                    // Nếu không phải JSON (chuỗi thuần), giữ nguyên
+                                                    displayImg = item.image; 
+                                                }
+
+                                                // Đảm bảo đường dẫn có đầy đủ http://localhost:3005/
+                                                const fullImgUrl = displayImg.startsWith('http') 
+                                                    ? displayImg 
+                                                    : `http://localhost:3005/${displayImg}`;
+
+                                                return (
+                                                    <div className="product-row-item" key={index}>
+                                                        <img 
+                                                            src={fullImgUrl} 
+                                                            alt={item.name} 
+                                                            className="p-img" 
+                                                            onError={(e) => {
+                                                                e.target.onerror = null; 
+                                                                e.target.src = '/placeholder-product.png';
+                                                            }}
+                                                        />
+                                                        <div className="p-details">
+                                                            <p className="p-name">{item.name}</p>
+                                                            <p className="p-qty">SL: {item.quantity} x {Number(item.price).toLocaleString('vi-VN')}đ</p>
+                                                        </div>
+                                                        <div className="p-total">
+                                                            {(item.quantity * item.price).toLocaleString('vi-VN')}đ
+                                                        </div>
                                                     </div>
-                                                    <div className="p-total">
-                                                        {(item.quantity * item.price).toLocaleString('vi-VN')}đ
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
 

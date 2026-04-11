@@ -162,6 +162,8 @@
     display: block;
     font-size: 0.8rem;
     color: var(--text-light);
+    margin-right: 10px;
+
 }
 
 .total-value {

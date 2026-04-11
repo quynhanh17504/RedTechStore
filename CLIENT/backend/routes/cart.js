@@ -2,10 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// 1. Lấy danh sách sản phẩm (Đã thêm discount_price và is_flash_sale)
+// 1. Lấy danh sách sản phẩm + Thông tin rank của User
 router.get('/:userId', async (req, res) => {
     try {
-        const sql = `
+        const userId = req.params.userId;
+
+        // Query lấy thông tin rank của User dựa trên member_rank (giống logic trong auth.js)
+        const userSql = `
+            SELECT u.id, u.total_points, r.rank_name, r.discount_percent 
+            FROM users u
+            LEFT JOIN rank_configs r ON u.member_rank = r.rank_name
+            WHERE u.id = ?`;
+        
+        const [users] = await db.execute(userSql, [userId]);
+        
+        // Nếu không tìm thấy rank phù hợp, mặc định là không giảm giá
+        const userRank = users.length > 0 ? users[0] : { discount_percent: 0, rank_name: 'Member' };
+
+        // Lấy danh sách sản phẩm trong giỏ
+        const cartSql = `
             SELECT 
                 ci.id as item_id, 
                 p.id as product_id, 
@@ -15,15 +30,25 @@ router.get('/:userId', async (req, res) => {
                 p.is_flash_sale, 
                 p.image, 
                 p.stock, 
-                ci.quantity 
+                ci.quantity
             FROM carts c
             JOIN cart_items ci ON c.id = ci.cart_id
             JOIN products p ON ci.product_id = p.id
             WHERE c.user_id = ?`;
-        const [rows] = await db.execute(sql, [req.params.userId]);
-        res.json(rows);
+
+        const [items] = await db.execute(cartSql, [userId]);
+
+        // Gộp dữ liệu trả về cho Frontend
+        const result = items.map(item => ({
+            ...item,
+            discount_percent: userRank.discount_percent || 0,
+            rank_name: userRank.rank_name || 'Member'
+        }));
+
+        res.json(result);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Lỗi Cart API:", err);
+        res.status(500).json({ error: "Lỗi hệ thống khi lấy giỏ hàng" });
     }
 });
 

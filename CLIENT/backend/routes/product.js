@@ -31,19 +31,36 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. API FLASH SALE
+// 2. API FLASH SALE - Cập nhật logic theo chiến dịch
 router.get('/flash-sale', async (req, res) => {
     try {
+        // Tìm chiến dịch đang kích hoạt (status = 1)
+        const [activeCampaigns] = await db.execute(
+            'SELECT id, end_time FROM flash_sales WHERE status = 1 LIMIT 1'
+        );
+
+        if (activeCampaigns.length === 0) {
+            return res.json({ products: [], end_time: null });
+        }
+
+        const campaign = activeCampaigns[0];
+
+        // Lấy sản phẩm thuộc chiến dịch đó
         const query = `
             SELECT p.*, b.name as brand_name, c.name as category_name 
             FROM products p
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN categories c ON p.category_id = c.id
-            WHERE p.is_flash_sale = 1 AND p.stock > 0
+            WHERE p.flash_sale_id = ? AND p.stock > 0
             LIMIT 4
         `;
-        const [rows] = await db.execute(query);
-        res.json(rows);
+        const [rows] = await db.execute(query, [campaign.id]);
+
+        // Trả về cả danh sách SP và thời gian kết thúc để Frontend làm đồng hồ đếm ngược
+        res.json({ 
+            products: rows, 
+            end_time: campaign.end_time 
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

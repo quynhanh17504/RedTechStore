@@ -211,7 +211,7 @@
 .badge-member { background: #e0e0e0; color: #666; }
 .badge-silver { background: #c0c0c0; color: #333; }
 .badge-gold { background: #ffd700; color: #856404; }
-
+.badge-platinum { background: #232537; color: #e5e5e5; } 
 .tab-fade-in {
     animation: fadeIn 0.4s ease-out;
 }

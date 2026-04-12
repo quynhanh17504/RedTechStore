@@ -9,6 +9,7 @@ import ProductMangement from './pages/ProductManagement';
 import CategoryManagement from './pages/CategoryManagement';
 import OrderManagement from './pages/OrderManagement';
 import AdminReview from './pages/ReviewManagement';
+import FlashSaleManagement from './pages/FlashSaleManagement';
 
 import './App.css';
 
@@ -35,6 +36,7 @@ function App() {
         <Route path="/admin/orders" element={<PrivateRoute><OrderManagement /></PrivateRoute>} />
         <Route path="/admin/brands" element={<PrivateRoute><BrandManagement /></PrivateRoute>} />
         <Route path="/admin/reviews" element={<PrivateRoute><AdminReview /></PrivateRoute>} />
+        <Route path="/admin/flash-sale" element={<PrivateRoute><FlashSaleManagement /></PrivateRoute>} />
         {/* --- ĐIỀU HƯỚNG MẶC ĐỊNH --- */}
         {/* Nếu vào trang chủ / thì tự chuyển về login */}
         <Route path="/" element={<Navigate to="/admin/login" />} />

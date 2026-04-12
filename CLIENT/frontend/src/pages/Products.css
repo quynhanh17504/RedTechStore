@@ -200,3 +200,126 @@
   .products-layout { grid-template-columns: 1fr; }
   .product-sidebar { display: none; }
 }
+
+/* --- TRẠNG THÁI TRỐNG (NO PRODUCTS) --- */
+.no-products-v2 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px dashed #e2e8f0;
+    text-align: center;
+    min-height: 400px;
+}
+
+.no-products-content {
+    max-width: 450px;
+}
+
+/* Hiệu ứng Icon */
+.empty-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #cbd5e1;
+}
+
+.bag-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+.search-overlay {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #ef4444; /* Màu đỏ RedTech */
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Typography */
+.no-products-content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.no-products-content p {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Gợi ý từ khóa (Suggestion Chips) */
+.suggestion-chips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 35px;
+}
+
+.suggestion-chips span {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.suggestion-chips button {
+    background: #f1f5f9;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-chips button:hover {
+    background: #e2e8f0;
+    color: #ef4444;
+}
+
+/* Nút quay lại */
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #1e293b;
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-back-home:hover {
+    background: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+}
+
+/* Animation nhẹ nhàng cho icon giỏ hàng */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 768px) {
+    .no-products-v2 {
+        padding: 40px 15px;
+    }
+    
+    .no-products-content h2 {
+        font-size: 20px;
+    }
+}

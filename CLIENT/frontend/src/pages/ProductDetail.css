@@ -395,3 +395,88 @@
   .pd-price-group { flex-direction: column; gap: 5px; }
   .pd-current-price { font-size: 2rem; }
 }
+
+.pd-action-buttons {
+  margin-top: 25px;
+  width: 100%;
+}
+
+.pd-btn-cart-only {
+  /* Layout & Size */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 32px;
+  
+  /* Màu sắc & Font (Gọi từ root của Ngọc) */
+  background-color: var(--primary-color);
+  color: var(--white) !important;
+  font-family: var(--font-main);
+  border-radius: var(--radius-md); /* 15px */
+  
+  /* Typography */
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  
+  /* Hiệu ứng & Tương tác */
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--glow-red);
+  
+  /* Hiệu ứng bóng bẩy (Glass/Shine) */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hiệu ứng khi di chuột vào */
+.pd-btn-cart-only:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(225, 6, 0, 0.4);
+}
+
+/* Vệt sáng quét ngang qua nút cho sang */
+.pd-btn-cart-only::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 20%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(30deg);
+  pointer-events: none;
+}
+
+.pd-btn-cart-only:hover::after {
+  left: 120%;
+  transition: all 0.6s ease-in-out;
+}
+
+/* Khi bấm nút */
+.pd-btn-cart-only:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Khi hết hàng (Disabled) */
+.pd-btn-cart-only:disabled {
+  background-color: var(--text-light);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive cho điện thoại */
+@media (max-width: 768px) {
+  .pd-btn-cart-only {
+    padding: 15px 20px;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+  }
+}

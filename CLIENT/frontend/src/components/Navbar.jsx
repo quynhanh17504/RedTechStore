@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, Laptop, Smartphone, Headphones, LayoutGrid, LogOut, Settings } from 'lucide-react';
+import { 
+  ShoppingCart, User, Search, Menu, X, ChevronDown, 
+  Laptop, Smartphone, Headphones, LayoutGrid, LogOut, 
+  Settings, Package, Watch, Tablet, Speaker 
+} from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './Navbar.css';
@@ -13,11 +17,33 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
-  
-  // State mới cho từ khóa tìm kiếm
   const [searchInput, setSearchInput] = useState("");
+  
+  // State mới để lưu danh sách danh mục từ Database
+  const [categories, setCategories] = useState([]);
+
+  // Hàm mapping Icon dựa trên tên danh mục (không phân biệt hoa thường)
+  const getCategoryIcon = (name) => {
+    const iconMap = {
+      'dien thoai': <Smartphone size={18} />,
+      'laptop': <Laptop size={18} />,
+      'phu kien cong nghe': <Headphones size={18} />,
+      'dong ho': <Watch size={18} />,
+      'may tinh bang': <Tablet size={18} />,
+      'loa': <Speaker size={18} />,
+    };
+
+    // Chuyển tên về dạng không dấu, viết thường để so khớp
+    const key = name.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d");
+
+    // Trả về icon tương ứng hoặc icon mặc định (Package) nếu là danh mục mới
+    return iconMap[key] || <Package size={18} />;
+  };
 
   useEffect(() => {
+    // Lấy thông tin User
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
@@ -25,10 +51,19 @@ const Navbar = () => {
       fetchCartCount(parsedUser.id);
     }
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    // Lấy danh sách danh mục từ API
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get('http://localhost:3005/client/categories');
+        setCategories(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy danh mục:", err);
+      }
     };
 
+    fetchCategories();
+
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     const updateCount = () => {
         const currentUser = localStorage.getItem('user');
         if (currentUser) fetchCartCount(JSON.parse(currentUser).id);
@@ -36,7 +71,6 @@ const Navbar = () => {
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('cartUpdated', updateCount);
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('cartUpdated', updateCount);
@@ -53,11 +87,9 @@ const Navbar = () => {
     }
   };
 
-  // Hàm xử lý tìm kiếm
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      // Chuyển hướng sang trang products kèm query string
       navigate(`/products?search=${encodeURIComponent(searchInput.trim())}`);
       setIsMobileMenuOpen(false);
     }
@@ -87,22 +119,28 @@ const Navbar = () => {
 
         <div className="nav-main-links">
           <Link to="/products" className="nav-link-item">Sản phẩm</Link>
+          
           <div className="nav-categories-desktop">
             <button className="cat-btn" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
               Danh mục <ChevronDown size={16} className={isCategoryOpen ? 'rotate' : ''} />
             </button>
+            
             {isCategoryOpen && (
               <div className="dropdown-menu">
-                <Link to="/products" onClick={() => setIsCategoryOpen(false)}><LayoutGrid size={18} /> Tất cả sản phẩm</Link>
-                <Link to="/category/1" onClick={() => setIsCategoryOpen(false)}><Smartphone size={18} /> Điện thoại</Link>
-                <Link to="/category/2" onClick={() => setIsCategoryOpen(false)}><Laptop size={18} /> Laptop</Link>
-                <Link to="/category/3" onClick={() => setIsCategoryOpen(false)}><Headphones size={18} /> Phụ kiện</Link>
+                <Link to="/products" onClick={() => setIsCategoryOpen(false)}>
+                  <LayoutGrid size={18} /> Tất cả sản phẩm
+                </Link>
+                {/* Render danh mục động từ database */}
+                {categories.map((cat) => (
+                  <Link key={cat.id} to={`/category/${cat.id}`} onClick={() => setIsCategoryOpen(false)}>
+                    {getCategoryIcon(cat.name)} {cat.name}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Search Bar Cập nhật thành Form */}
         <form className="nav-search-wrapper" onSubmit={handleSearch}>
           <input 
             type="text" 
@@ -163,21 +201,23 @@ const Navbar = () => {
                 <button type="submit" className="search-btn"><Search size={18} /></button>
              </div>
           </form>
-          {user && (
-             <div className="mobile-user-profile">
-                <p>Xin chào, <strong>{user.fullname}</strong></p>
-             </div>
-          )}
+
           <Link to="/products" onClick={() => setIsMobileMenuOpen(false)}>TẤT CẢ SẢN PHẨM</Link>
           <hr className="sidebar-divider" />
-          <Link to="/category/phone" onClick={() => setIsMobileMenuOpen(false)}>Điện thoại</Link>
-          <Link to="/category/laptop" onClick={() => setIsMobileMenuOpen(false)}>Laptop</Link>
-          <Link to="/category/accessories" onClick={() => setIsMobileMenuOpen(false)}>Phụ kiện</Link>
+          
+          {/* Render danh mục động cho Mobile */}
+          <p className="mobile-section-title" style={{padding: '10px 20px', fontSize: '12px', color: '#888'}}>DANH MỤC</p>
+          {categories.map((cat) => (
+            <Link key={cat.id} to={`/category/${cat.id}`} onClick={() => setIsMobileMenuOpen(false)}>
+              {cat.name}
+            </Link>
+          ))}
+          
           <hr className="sidebar-divider" />
           {user ? (
             <>
               <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>Hồ sơ</Link>
-              <span className="sidebar-logout" onClick={handleLogout}>Đăng xuất</span>
+              <span className="sidebar-logout" onClick={handleLogout} style={{padding: '15px 20px', display: 'block', color: '#ef4444'}}>Đăng xuất</span>
             </>
           ) : (
             <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>Đăng nhập / Đăng ký</Link>

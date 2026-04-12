@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
-import axios from 'axios'; // Import Axios
-import toast from 'react-hot-toast'; // Import Toast
-import { useNavigate } from 'react-router-dom'; // Để chuyển trang sau khi login
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 const AdminLogin = () => {
@@ -11,40 +11,38 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // URL API Backend Admin (Port 5000)
   const API_URL = 'http://localhost:5000/admin/auth/login';
-const handleLogin = async (e) => {
-  e.preventDefault();
-  const loadingToast = toast.loading('Đang xác thực quyền quản trị...');
 
-  try {
-    const res = await axios.post(API_URL, { email, password });
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const loadingToast = toast.loading('Đang xác thực quyền quản trị...');
 
-    // 1. Kiểm tra res.data.user (thay vì res.data.admin)
-    if (res.data && res.data.token) {
-      const userData = res.data.user; 
+    try {
+      const res = await axios.post(API_URL, { email, password });
 
-      // 2. Kiểm tra thêm một lần nữa ở Client cho chắc chắn là role admin
-      if (userData && userData.role === 'admin') {
-        localStorage.setItem('adminToken', res.data.token);
-        localStorage.setItem('adminInfo', JSON.stringify(userData));
+      if (res.data && res.data.token) {
+        const userData = res.data.user;
 
-        toast.success(`Chào mừng ${userData.fullname} quay trở lại!`, { id: loadingToast });
+        if (userData && userData.role === 'admin') {
+          // Lưu thông tin vào localStorage để dùng cho các trang quản trị
+          localStorage.setItem('adminToken', res.data.token);
+          localStorage.setItem('adminInfo', JSON.stringify(userData));
 
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 1000);
-      } else {
-        // Trường hợp role là client nhưng cố tình đăng nhập vào trang admin
-        toast.error("Bạn không có quyền truy cập khu vực này!", { id: loadingToast });
+          toast.success(`Chào mừng ${userData.fullname} quay trở lại!`, { id: loadingToast });
+
+          setTimeout(() => {
+            navigate('/admin/dashboard');
+          }, 1000);
+        } else {
+          toast.error("Bạn không có quyền truy cập khu vực này!", { id: loadingToast });
+        }
       }
+    } catch (err) {
+      console.error("Lỗi đăng nhập:", err);
+      const errorMsg = err.response?.data?.message || 'Lỗi server hoặc tài khoản không đúng';
+      toast.error(errorMsg, { id: loadingToast });
     }
-  } catch (err) {
-    console.error("Lỗi đăng nhập:", err);
-    const errorMsg = err.response?.data?.message || 'Lỗi server hoặc tài khoản không đúng';
-    toast.error(errorMsg, { id: loadingToast });
-  }
-};
+  };
 
   return (
     <div className="admin-login-page" style={{ fontFamily: 'Cabin, sans-serif' }}>
@@ -91,15 +89,7 @@ const handleLogin = async (e) => {
             </div>
           </div>
 
-          <div className="login-options">
-            <label className="remember-me">
-              <input type="checkbox" /> 
-              <span>Ghi nhớ phiên đăng nhập</span>
-            </label>
-            <a href="#" className="forgot-link">Quên mật khẩu?</a>
-          </div>
-
-          <button type="submit" className="btn-admin-login">
+          <button type="submit" className="btn-admin-login" style={{ marginTop: '20px' }}>
             ĐĂNG NHẬP HỆ THỐNG <LogIn size={20} />
           </button>
         </form>

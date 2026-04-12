@@ -8,10 +8,17 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable'; 
 import './OrderManagement.css';
 
-// 1. Đồng bộ mapping 5 trạng thái khớp 100% với MySQL enum
+// 1. Hàm bổ trợ chuyển đổi Tiếng Việt không dấu để tránh lỗi font PDF
+const removeAccents = (str) => {
+  if (!str) return "";
+  return str.normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+};
+
 const STATUS_MAP = {
   pending: { label: "Chờ xử lý", class: "pending", icon: <Clock size={12}/> },
   processing: { label: "Đang chuẩn bị", class: "processing", icon: <Package size={12}/> },
@@ -26,7 +33,7 @@ const OrderManagement = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-const API_URL = 'http://localhost:5000/admin/orders';
+  const API_URL = 'http://localhost:5000/admin/orders';
 
   const fetchOrders = async () => {
     try {
@@ -39,18 +46,12 @@ const API_URL = 'http://localhost:5000/admin/orders';
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // 2. CẬP NHẬT TRẠNG THÁI (Gửi key Tiếng Anh chuẩn xuống DB)
   const updateStatus = async (orderId, newStatusKey) => {
     const loading = toast.loading("Đang cập nhật...");
     try {
-      // Gọi API đúng route /update-status/:id
       await axios.put(`${API_URL}/update-status/${orderId}`, { status: newStatusKey });
-      
       toast.success("Trạng thái đã được cập nhật!", { id: loading });
-      
-      // Cập nhật State cục bộ
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatusKey } : o));
-      
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder(prev => ({ ...prev, status: newStatusKey }));
       }
@@ -59,13 +60,9 @@ const API_URL = 'http://localhost:5000/admin/orders';
     }
   };
 
-  // 3. HIỂN THỊ BADGE (Xử lý thông minh cho cả dữ liệu cũ/mới)
   const getStatusBadge = (status) => {
     if (!status) return <span className="status-pill default">N/A</span>;
-    
     const s = status.toLowerCase();
-    
-    // Map ngược từ Tiếng Việt (nếu có dữ liệu cũ) về Key Tiếng Anh
     let key = s;
     if (s === 'đang xử lý') key = 'pending';
     if (s === 'đang chuẩn bị') key = 'processing';
@@ -74,7 +71,6 @@ const API_URL = 'http://localhost:5000/admin/orders';
     if (s === 'đã hủy') key = 'cancelled';
 
     const config = STATUS_MAP[key];
-
     if (config) {
       return (
         <span className={`status-pill ${config.class}`}>
@@ -82,7 +78,6 @@ const API_URL = 'http://localhost:5000/admin/orders';
         </span>
       );
     }
-
     return <span className="status-pill default">{status}</span>;
   };
 
@@ -90,9 +85,7 @@ const API_URL = 'http://localhost:5000/admin/orders';
     const data = orders.map(o => {
       const s = o.status?.toLowerCase();
       let statusText = o.status;
-      // Chuyển sang Tiếng Việt khi xuất file cho đẹp
       if (STATUS_MAP[s]) statusText = STATUS_MAP[s].label;
-
       return {
         "Mã Đơn": `#${o.id}`,
         "Khách hàng": o.fullname,
@@ -108,26 +101,74 @@ const API_URL = 'http://localhost:5000/admin/orders';
     XLSX.writeFile(wb, `RedTech_Orders_${new Date().toLocaleDateString()}.xlsx`);
   };
 
+  // --- HÀM IN HÓA ĐƠN NÂNG CẤP ---
   const exportInvoice = (order) => {
     const doc = new jsPDF();
-    doc.text(`HOA DON BAN HANG - REDTECH`, 20, 20);
-    doc.text(`Ma don: #${order.id}`, 20, 30);
-    doc.text(`Khach hang: ${order.fullname}`, 20, 40);
+    const redColor = [239, 68, 68];
 
+    // Header: Logo & Tên Brand
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(redColor[0], redColor[1], redColor[2]);
+    doc.text("REDTECH", 105, 20, { align: 'center' });
+    
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("CONG NGHE DAN DAU - RT ADMIN PANEL", 105, 27, { align: 'center' });
+    doc.line(20, 32, 190, 32); 
+
+    // Tiêu đề hóa đơn
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.text("HOA DON BAN HANG", 20, 45);
+    
+    doc.setFontSize(10);
+    doc.text(`Ma don hang: #${order.id}`, 20, 53);
+    doc.text(`Ngay xuat: ${new Date().toLocaleDateString('vi-VN')}`, 20, 59);
+
+    // Box Thông tin khách hàng
+    doc.setFillColor(248, 250, 252);
+    doc.rect(120, 40, 70, 28, 'F');
+    doc.setFont("Helvetica", "bold");
+    doc.text("NGUOI NHAN:", 125, 47);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(removeAccents(order.fullname).toUpperCase(), 125, 53);
+    doc.text(`SDT: ${order.phone}`, 125, 59);
+    doc.text(`PTTT: ${removeAccents(order.payment_method)}`, 125, 65);
+
+    // Bảng sản phẩm
     const tableData = order.products.map(p => [
-      p.product_name || "Sản phẩm", 
+      removeAccents(p.product_name), 
       p.quantity, 
-      `${parseInt(p.price).toLocaleString('vi-VN')}đ`, 
-      `${(parseInt(p.price) * p.quantity).toLocaleString('vi-VN')}đ`
+      `${parseInt(p.price).toLocaleString('vi-VN')}d`, 
+      `${(parseInt(p.price) * p.quantity).toLocaleString('vi-VN')}d`
     ]);
 
-    doc.autoTable({
-      startY: 50,
+    autoTable(doc, {
+      startY: 75,
       head: [['San pham', 'SL', 'Don gia', 'Thanh tien']],
       body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: redColor, halign: 'center' },
+      styles: { font: "Helvetica", fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 85 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
     });
 
-    doc.text(`Tong cong: ${parseInt(order.total_price).toLocaleString('vi-VN')}đ`, 20, doc.lastAutoTable.finalY + 10);
+    // Tổng tiền & Footer
+    const finalY = doc.lastAutoTable.finalY || 150;
+    doc.setFontSize(12);
+    doc.setFont("Helvetica", "bold");
+    doc.text("TONG CONG:", 120, finalY + 15);
+    doc.setTextColor(redColor[0], redColor[1], redColor[2]);
+    doc.text(`${parseInt(order.total_price).toLocaleString('vi-VN')}d`, 190, finalY + 15, { align: 'right' });
+
+    doc.setFont("Helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text("Cam on quy khach da tin tuong RedTech!", 105, finalY + 30, { align: 'center' });
+
     doc.save(`Invoice_RedTech_${order.id}.pdf`);
   };
 
@@ -195,10 +236,9 @@ const API_URL = 'http://localhost:5000/admin/orders';
           </div>
         </div>
 
-        {/* Modal Chi tiết đơn hàng */}
         {isModalOpen && selectedOrder && (
-          <div className="modal-overlay">
-            <div className="modal-container order-detail-modal">
+          <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+            <div className="modal-container order-detail-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Chi tiết đơn hàng #{selectedOrder.id}</h3>
                 <button className="btn-close-x" onClick={() => setIsModalOpen(false)}>
@@ -212,8 +252,8 @@ const API_URL = 'http://localhost:5000/admin/orders';
                     <div className="card-label"><User size={14}/> Thông tin người nhận</div>
                     <p><strong>Họ tên:</strong> {selectedOrder.fullname}</p>
                     <p><strong>Số điện thoại:</strong> {selectedOrder.phone}</p>
-                    <p className="address"><strong>Địa chỉ:</strong> <MapPin size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.address}</p>
-                    <p><strong>Thanh toán:</strong> <CreditCard size={12} style={{display: 'inline', verticalAlign: 'middle'}}/> {selectedOrder.payment_method} ({selectedOrder.payment_status})</p>
+                    <p className="address"><strong>Địa chỉ:</strong> <MapPin size={12}/> {selectedOrder.address}</p>
+                    <p><strong>Thanh toán:</strong> <CreditCard size={12}/> {selectedOrder.payment_method}</p>
                   </div>
                   
                   <div className="detail-card status-card">
@@ -223,11 +263,11 @@ const API_URL = 'http://localhost:5000/admin/orders';
                       value={selectedOrder.status} 
                       onChange={(e) => updateStatus(selectedOrder.id, e.target.value)}
                     >
-                      <option value="pending">⏳ Chờ xử lý (Pending)</option>
-                      <option value="processing">📦 Đang chuẩn bị (Processing)</option>
-                      <option value="shipped">🚚 Đang giao hàng (Shipped)</option>
-                      <option value="delivered">✅ Thành công (Delivered)</option>
-                      <option value="cancelled">❌ Đã hủy đơn (Cancelled)</option>
+                      <option value="pending">⏳ Chờ xử lý</option>
+                      <option value="processing">📦 Đang chuẩn bị</option>
+                      <option value="shipped">🚚 Đang giao hàng</option>
+                      <option value="delivered">✅ Thành công</option>
+                      <option value="cancelled">❌ Đã hủy đơn</option>
                     </select>
                   </div>
                 </div>
@@ -235,7 +275,7 @@ const API_URL = 'http://localhost:5000/admin/orders';
                 <div className="product-list-section">
                   <h4 style={{marginBottom: '15px'}}>Sản phẩm đã đặt</h4>
                   <div className="item-container">
-                    {selectedOrder.products && selectedOrder.products.map((p, idx) => {
+                    {selectedOrder.products?.map((p, idx) => {
                       let displayImg = 'https://via.placeholder.com/60';
                       try {
                         const imgs = p.image ? JSON.parse(p.image) : [];
@@ -244,7 +284,7 @@ const API_URL = 'http://localhost:5000/admin/orders';
 
                       return (
                         <div className="product-item-row" key={idx}>
-                          <img src={displayImg || 'https://via.placeholder.com/60'} alt={p.product_name} />
+                          <img src={displayImg} alt={p.product_name} />
                           <div className="p-info">
                             <h5>{p.product_name}</h5>
                             <small>Giá: {parseInt(p.price).toLocaleString('vi-VN')}đ</small>

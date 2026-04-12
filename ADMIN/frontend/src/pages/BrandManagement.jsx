@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, Plus, Trash2, Edit3, X, Smartphone, Laptop, Headphones, FileSpreadsheet, FileText } from 'lucide-react';
+import { 
+  Search, Plus, Trash2, Edit3, X, FileSpreadsheet, 
+  AlertTriangle, Briefcase 
+} from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import './BrandManagement.css';
 
 const BrandManagement = () => {
@@ -15,7 +16,10 @@ const BrandManagement = () => {
   const [brandName, setBrandName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // FETCH DATA
+  // States cho Modal xác nhận xóa
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [brandToDelete, setBrandToDelete] = useState(null);
+
   const fetchBrands = async () => {
     try {
       const res = await axios.get('http://localhost:5000/admin/brands');
@@ -27,7 +31,6 @@ const BrandManagement = () => {
 
   useEffect(() => { fetchBrands(); }, []);
 
-  // SUBMIT (ADD/EDIT)
   const handleSubmit = async (e) => {
     e.preventDefault();
     const load = toast.loading("Đang xử lý...");
@@ -46,27 +49,37 @@ const BrandManagement = () => {
     }
   };
 
-  // DELETE
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Xác nhận xóa thương hiệu ${name}?`)) {
-      try {
-        await axios.delete(`http://localhost:5000/admin/brands/delete/${id}`);
-        toast.success("Đã xóa thương hiệu");
-        fetchBrands();
-      } catch (err) {
-        toast.error(err.response?.data?.message || "Lỗi khi xóa");
-      }
+  // Mở modal xác nhận xóa
+  const openDeleteModal = (brand) => {
+    setBrandToDelete(brand);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Hàm xóa thực sự
+  const handleDelete = async () => {
+    if (!brandToDelete) return;
+    
+    const load = toast.loading("Đang xóa...");
+    try {
+      await axios.delete(`http://localhost:5000/admin/brands/delete/${brandToDelete.id}`);
+      toast.success("Đã xóa thương hiệu thành công", { id: load });
+      setIsDeleteModalOpen(false);
+      fetchBrands();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi khi xóa", { id: load });
+      setIsDeleteModalOpen(false);
+    } finally {
+      setBrandToDelete(null);
     }
   };
 
-  // EXPORT EXCEL
   const exportToExcel = () => {
     const data = brands.map(b => ({
       "Thương hiệu": b.name,
       "Điện thoại": b.phone,
       "Laptop": b.laptop,
       "Phụ kiện": b.accessory,
-      "Tổng": b.phone + b.laptop + b.accessory
+      "Tổng": (b.phone || 0) + (b.laptop || 0) + (b.accessory || 0)
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -83,12 +96,14 @@ const BrandManagement = () => {
         <header className="page-header-v2">
           <div className="header-content">
             <h1>Quản lý thương hiệu</h1>
-            <p>Thống kê và quản lý các đối tác sản xuất.</p>
+            <p>Thống kê và quản lý các đối tác sản xuất của <strong>RedTech</strong>.</p>
           </div>
           
           <div className="header-actions-group">
             <div className="export-tools">
-              <button className="tool-btn excel" onClick={exportToExcel}><FileSpreadsheet size={20} /></button>
+              <button className="tool-btn excel" onClick={exportToExcel} title="Xuất Excel">
+                <FileSpreadsheet size={20} />
+              </button>
             </div>
             <button className="btn-create-account" onClick={() => { setEditingBrand(null); setBrandName(""); setIsModalOpen(true); }}>
               <Plus size={19} /> <span>Thêm thương hiệu</span>
@@ -134,7 +149,7 @@ const BrandManagement = () => {
                     <td className="text-right">
                       <div className="action-btns" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <button className="action-edit-btn" onClick={() => { setEditingBrand(brand); setBrandName(brand.name); setIsModalOpen(true); }}><Edit3 size={17} /></button>
-                        <button className="action-delete-btn" onClick={() => handleDelete(brand.id, brand.name)}><Trash2 size={17} /></button>
+                        <button className="action-delete-btn" onClick={() => openDeleteModal(brand)}><Trash2 size={17} /></button>
                       </div>
                     </td>
                   </tr>
@@ -144,23 +159,63 @@ const BrandManagement = () => {
           </div>
         </div>
 
+        {/* MODAL THÊM / SỬA */}
         {isModalOpen && (
           <div className="modal-overlay">
             <div className="modal-container">
               <div className="modal-header">
-                <h3>{editingBrand ? "Cập nhật thương hiệu" : "Thêm thương hiệu"}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Briefcase size={22} color="#E10600" />
+                  <h3>{editingBrand ? "Cập nhật thương hiệu" : "Thêm thương hiệu"}</h3>
+                </div>
                 <button className="close-modal" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
               </div>
               <form className="modal-form" onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label>Tên thương hiệu</label>
-                  <input type="text" value={brandName} onChange={(e) => setBrandName(e.target.value)} required autoFocus />
+                  <label>Tên đối tác thương hiệu</label>
+                  <input 
+                    type="text" 
+                    value={brandName} 
+                    onChange={(e) => setBrandName(e.target.value)} 
+                    placeholder="Ví dụ: Apple, Samsung..."
+                    required 
+                    autoFocus 
+                  />
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Hủy</button>
-                  <button type="submit" className="btn-submit">Xác nhận</button>
+                  <button type="submit" className="btn-submit">Xác nhận lưu</button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* --- MODAL XÁC NHẬN XÓA (ĐỒNG BỘ STYLE) --- */}
+        {isDeleteModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-container delete-confirm-modal animate-scale-up">
+              <div className="delete-icon-wrapper">
+                <AlertTriangle size={40} color="#E10600" />
+              </div>
+              
+              <h3 style={{ marginBottom: '10px', fontWeight: '700' }}>Xác nhận xóa đối tác?</h3>
+              
+              <p style={{ color: '#64748b', lineHeight: '1.6', marginBottom: '25px' }}>
+                Bạn có chắc muốn xóa thương hiệu <strong> {brandToDelete?.name}</strong>? 
+                Thao tác này sẽ gỡ bỏ liên kết của đối tác khỏi hệ thống và không thể khôi phục.
+              </p>
+
+              <div className="modal-footer" style={{ justifyContent: 'center', gap: '12px' }}>
+                <button className="btn-cancel" onClick={() => setIsDeleteModalOpen(false)} style={{ minWidth: '120px' }}>Hủy bỏ</button>
+                <button 
+                  className="btn-confirm-delete" 
+                  onClick={handleDelete}
+                  style={{ minWidth: '120px', backgroundColor: '#E10600' }}
+                >
+                  Đồng ý xóa
+                </button>
+              </div>
             </div>
           </div>
         )}

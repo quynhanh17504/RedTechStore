@@ -1,40 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   ShoppingCart, ChevronLeft, ChevronRight, 
-  Monitor, Cpu, Battery, HardDrive, Zap, Clock 
+  Monitor, Cpu, Battery, HardDrive, Zap, Clock, Camera, Layers, Maximize, Weight, Smartphone
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './ProductDetail.css';
 import ProductReviews from '../components/ProductReviews'; 
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(null);
 
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userId = user?.id;
+
   const specMap = {
     "1": [
       { label: "Màn hình", name: "screen", icon: <Monitor size={14}/> },
-      { label: "Camera sau", name: "back_camera" },
-      { label: "Camera trước", name: "front_camera" },
+      { label: "Camera sau", name: "back_camera", icon: <Camera size={14}/> },
+      { label: "Camera trước", name: "front_camera", icon: <Camera size={14}/> },
       { label: "Chipset", name: "chipset", icon: <Cpu size={14}/> },
-      { label: "RAM / ROM", name: "ram_rom" },
+      { label: "RAM / ROM", name: "ram_rom", icon: <Layers size={14}/> },
       { label: "Pin", name: "battery", icon: <Battery size={14}/> },
-      { label: "Hệ điều hành", name: "os" },
-      { label: "Độ phân giải", name: "resolution" }
+      { label: "Hệ điều hành", name: "os", icon: <Smartphone size={14}/> },
+      { label: "Độ phân giải", name: "resolution", icon: <Maximize size={14}/> }
     ],
     "2": [
       { label: "CPU", name: "cpu", icon: <Cpu size={14}/> },
-      { label: "Card đồ họa", name: "gpu" },
-      { label: "RAM", name: "ram" },
+      { label: "Card đồ họa", name: "gpu", icon: <Monitor size={14}/> },
+      { label: "RAM", name: "ram", icon: <Layers size={14}/> },
       { label: "SSD", name: "ssd", icon: <HardDrive size={14}/> },
-      { label: "Kích thước màn hình", name: "screen_size", icon: <Monitor size={14}/> },
+      { label: "Kích thước màn hình", name: "screen_size", icon: <Maximize size={14}/> },
       { label: "Pin", name: "battery", icon: <Battery size={14}/> },
-      { label: "Trọng lượng", name: "weight" }
+      { label: "Trọng lượng", name: "weight", icon: <Weight size={14}/> }
     ]
+  };
+
+  const syncAddToCart = async (quantity = 1) => {
+    if (!userId) {
+      toast.error("Vui lòng đăng nhập để mua hàng!");
+      navigate('/login');
+      return false;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:3005/client/cart/add', {
+        userId: userId,
+        productId: product.id,
+        quantity: quantity
+      });
+
+      if (response.data.success || response.status === 200) {
+        window.dispatchEvent(new Event('cartUpdated'));
+        return true;
+      }
+    } catch (error) {
+      console.error("Lỗi thêm giỏ hàng:", error);
+      toast.error("Không thể thêm vào giỏ hàng");
+      return false;
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (product.stock <= 0) {
+      toast.error("Sản phẩm đã hết hàng!");
+      return;
+    }
+    const success = await syncAddToCart();
+    if (success) toast.success("Đã thêm vào giỏ hàng!");
   };
 
   const calculateTimeLeft = (endTime) => {
@@ -54,8 +93,7 @@ const ProductDetail = () => {
       try {
         const res = await axios.get(`http://localhost:3005/client/products/${id}`);
         setProduct(res.data);
-        // Chỉ set timer nếu thực sự là flash sale và còn thời gian
-        if (res.data.is_flash_sale && res.data.sale_end) {
+        if (res.data.flash_sale_id && res.data.sale_end) {
           const initialTime = calculateTimeLeft(res.data.sale_end);
           setTimeLeft(initialTime);
         }
@@ -70,7 +108,7 @@ const ProductDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!product?.is_flash_sale || !product?.sale_end) return;
+    if (!product?.flash_sale_id || !product?.sale_end) return;
     const timer = setInterval(() => {
       const updatedTime = calculateTimeLeft(product.sale_end);
       setTimeLeft(updatedTime);
@@ -84,14 +122,11 @@ const ProductDetail = () => {
 
   const productImages = Array.isArray(product.image) ? product.image : [product.image];
   const hasDiscount = product.discount_price && product.discount_price > 0;
-  // Quan trọng: Kiểm tra timeLeft phải tồn tại và khác null
-  const isFlashSaleActive = !!(product.is_flash_sale && timeLeft);
-  const soldPercentage = isFlashSaleActive ? 65 : 0; 
+  const isFlashSaleActive = !!(product.flash_sale_id && timeLeft);
 
   return (
-    <div className="pd-page-wrapper">
+    <div className="pd-page-wrapper" style={{ fontFamily: 'Cabin, sans-serif' }}>
       <div className="pd-container">
-        
         {isFlashSaleActive && (
           <div className="pd-flash-bar">
             <div className="pd-flash-title">
@@ -156,27 +191,15 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Đã xóa dòng "0" thừa ở đây */}
-
-            {isFlashSaleActive && (
-              <div className="pd-flash-progress-box">
-                <div className="pd-progress-info">
-                  <span>🔥 Đã bán {soldPercentage}%</span>
-                  <span>Sắp cháy hàng</span>
-                </div>
-                <div className="pd-progress-bg">
-                  <div className="pd-progress-fill" style={{ width: `${soldPercentage}%` }}></div>
-                </div>
-              </div>
-            )}
-
-            <div className="pd-short-desc">
-              <p>{product.description}</p>
-            </div>
-
             <div className="pd-action-buttons">
-              <button className="pd-btn-buy">MUA NGAY</button>
-              <button className="pd-btn-cart"><ShoppingCart size={20} /> GIỎ HÀNG</button>
+              {/* Chỉ giữ lại nút thêm giỏ hàng */}
+              <button 
+                className="pd-btn-cart-only" 
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+              >
+                <ShoppingCart size={20} /> THÊM VÀO GIỎ HÀNG
+              </button>
             </div>
               
             <div className="pd-specs-card">

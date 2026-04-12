@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, UserPlus, Trash2, X, ShieldCheck } from 'lucide-react';
+import { Search, UserPlus, Trash2, X, ShieldCheck, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './UserManagement.css';
 
 const UserManagement = () => {
-  // --- STATE QUẢN LÝ ---
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // State mới cho Modal Xóa
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
   const [formData, setFormData] = useState({
     fullname: '',
     email: '',
@@ -18,16 +22,12 @@ const UserManagement = () => {
     role: 'client'
   });
 
-  // --- API CALLS ---
-
-  // 1. Lấy danh sách người dùng
   const fetchUsers = async () => {
     try {
       const res = await axios.get('http://localhost:5000/admin/auth/users');
       setUsers(res.data);
     } catch (err) {
       toast.error("Không thể tải danh sách người dùng");
-      console.error(err);
     }
   };
 
@@ -35,7 +35,6 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // 2. Xử lý Tạo tài khoản
   const handleSubmit = async (e) => {
     e.preventDefault();
     const load = toast.loading("Đang khởi tạo...");
@@ -50,21 +49,28 @@ const UserManagement = () => {
     }
   };
 
-  // 3. Xử lý Xóa tài khoản
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản của "${name}"?`)) {
-      const load = toast.loading("Đang xóa...");
-      try {
-        await axios.delete(`http://localhost:5000/admin/auth/users/${id}`);
-        toast.success("Đã xóa tài khoản!", { id: load });
-        fetchUsers();
-      } catch (err) {
-        toast.error(err.response?.data?.message || "Lỗi khi xóa", { id: load });
-      }
+  // Mở modal xác nhận xóa
+  const confirmDelete = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Xử lý xóa thực tế
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    
+    const load = toast.loading("Đang xóa...");
+    try {
+      await axios.delete(`http://localhost:5000/admin/auth/users/${userToDelete.id}`);
+      toast.success(`Đã xóa tài khoản ${userToDelete.fullname}`, { id: load });
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi khi xóa", { id: load });
     }
   };
 
-  // --- LOGIC LỌC TÌM KIẾM ---
   const filteredUsers = users.filter(user => 
     user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -75,7 +81,6 @@ const UserManagement = () => {
       <Sidebar />
       
       <main className="admin-main">
-        {/* HEADER SECTION */}
         <header className="page-header-v2">
           <div className="header-content">
             <h1>Quản lý người dùng</h1>
@@ -90,7 +95,6 @@ const UserManagement = () => {
           </div>
         </header>
 
-        {/* BỘ LỌC & THỐNG KÊ */}
         <div className="table-card">
           <div className="table-filter-area">
             <div className="search-bar-v2">
@@ -115,7 +119,6 @@ const UserManagement = () => {
             </div>
           </div>
 
-          {/* BẢNG DỮ LIỆU */}
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
@@ -144,7 +147,7 @@ const UserManagement = () => {
                       <td className="text-right">
                         <button 
                           className="action-delete-btn"
-                          onClick={() => handleDelete(user.id, user.fullname)}
+                          onClick={() => confirmDelete(user)}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -180,55 +183,28 @@ const UserManagement = () => {
               <form className="modal-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label>Họ và Tên</label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập họ và tên đầy đủ" 
-                    required 
-                    value={formData.fullname}
-                    onChange={(e) => setFormData({...formData, fullname: e.target.value})}
-                  />
+                  <input type="text" required value={formData.fullname} onChange={(e) => setFormData({...formData, fullname: e.target.value})} />
                 </div>
-
                 <div className="form-group">
                   <label>Email đăng nhập</label>
-                  <input 
-                    type="email" 
-                    placeholder="example@redtech.vn" 
-                    required 
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
+                  <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                 </div>
-
                 <div className="form-grid">
                   <div className="form-group">
                     <label>Mật khẩu</label>
-                    <input 
-                      type="password" 
-                      placeholder="••••••••" 
-                      required 
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    />
+                    <input type="password" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label>Quyền hạn</label>
-                    <select 
-                      value={formData.role} 
-                      onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    >
+                    <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                       <option value="client">Khách hàng</option>
                       <option value="admin">Quản trị viên</option>
                     </select>
                   </div>
                 </div>
-
                 <div className="form-group">
                   <label>Giới tính</label>
-                  <select 
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                  >
+                  <select value={formData.gender} onChange={(e) => setFormData({...formData, gender: e.target.value})}>
                     <option value="Nam">Nam</option>
                     <option value="Nữ">Nữ</option>
                     <option value="Khác">Khác</option>
@@ -240,6 +216,26 @@ const UserManagement = () => {
                   <button type="submit" className="btn-submit">Xác nhận tạo</button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* --- MODAL XÓA (MỚI & ĐẸP) --- */}
+        {isDeleteModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-container delete-confirm-modal animate-scale-up">
+              <div className="delete-icon-wrapper">
+                <AlertTriangle size={40} color="#E10600" />
+              </div>
+              <h3>Xác nhận xóa?</h3>
+              <p>
+                Bạn có chắc chắn muốn xóa tài khoản của khách hàng
+                <strong> {userToDelete?.fullname}</strong>?
+              </p>
+              <div className="modal-footer">
+                <button className="btn-cancel" onClick={() => setIsDeleteModalOpen(false)}>Hủy bỏ</button>
+                <button className="btn-confirm-delete" onClick={handleDelete}>Xác nhận xóa</button>
+              </div>
             </div>
           </div>
         )}

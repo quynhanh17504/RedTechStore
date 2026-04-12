@@ -13,35 +13,29 @@ const ProductManagement = () => {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   
-  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
 
-  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   
-  // Form State
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [specs, setSpecs] = useState({});
   const [priceValue, setPriceValue] = useState("");
-  const [discountPriceValue, setDiscountPriceValue] = useState(""); // Thêm state giá sale
-  const [isFlashSale, setIsFlashSale] = useState(false); // Thêm state flash sale
+  const [discountPriceValue, setDiscountPriceValue] = useState(""); 
+  const [isFlashSale, setIsFlashSale] = useState(false); 
   const [stockValue, setStockValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Image State
   const [selectedFiles, setSelectedFiles] = useState([]); 
   const [previews, setPreviews] = useState([]); 
 
-  // Filters
   const [filterCategory, setFilterCategory] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [sortBy, setSortBy] = useState("latest");
 
-  // --- FETCH DATA ---
   const fetchData = async () => {
     try {
       const [pRes, cRes, bRes] = await Promise.all([
@@ -59,7 +53,6 @@ const ProductManagement = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  // --- LOGIC XỬ LÝ ẢNH ---
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     const availableSlots = 4 - previews.length;
@@ -90,7 +83,6 @@ const ProductManagement = () => {
     setPreviews(updatedPreviews);
   };
 
-  // --- LOGIC XÓA SẢN PHẨM ---
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
     const load = toast.loading("Đang xóa sản phẩm...");
@@ -105,7 +97,6 @@ const ProductManagement = () => {
     }
   };
 
-  // --- LOGIC TÌM KIẾM & LỌC ---
   const filteredProducts = products
     .filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -157,10 +148,19 @@ const ProductManagement = () => {
       setSpecs({});
       setPreviews([product.image]);
     }
+    
+    // Xử lý giá hiển thị
     setPriceValue(parseInt(product.price).toLocaleString('en-US'));
-    // Gán giá trị sale nếu có
-    setDiscountPriceValue(product.discount_price ? parseInt(product.discount_price).toLocaleString('en-US') : "");
-    setIsFlashSale(product.is_flash_sale === 1);
+    
+    // SỬA LỖI: Chỉ hiện giá sale nếu nó lớn hơn 0
+    if (product.discount_price && parseInt(product.discount_price) > 0) {
+        setDiscountPriceValue(parseInt(product.discount_price).toLocaleString('en-US'));
+    } else {
+        setDiscountPriceValue("");
+    }
+    
+    // Flash Sale dựa trên flash_sale_id có tồn tại hay không
+    setIsFlashSale(product.flash_sale_id !== null && product.flash_sale_id !== undefined);
     
     setStockValue(product.stock);
     setSelectedFiles([]); 
@@ -172,8 +172,12 @@ const ProductManagement = () => {
     const formData = new FormData();
     formData.append('name', e.target.name.value);
     formData.append('price', priceValue.replace(/,/g, ""));
-    formData.append('discount_price', discountPriceValue.replace(/,/g, "")); // Thêm field sale
-    formData.append('is_flash_sale', isFlashSale ? 1 : 0); // Thêm field flash sale
+    
+    // SỬA LỖI: Gửi chuỗi rỗng nếu không có giá sale để backend set NULL
+    const cleanDiscountPrice = discountPriceValue.replace(/,/g, "");
+    formData.append('discount_price', cleanDiscountPrice !== "" ? cleanDiscountPrice : ""); 
+    
+    formData.append('is_flash_sale', isFlashSale ? 1 : 0);
     formData.append('category_id', selectedCategory);
     formData.append('brand_id', e.target.brand_id.value);
     formData.append('stock', stockValue);
@@ -210,7 +214,7 @@ const ProductManagement = () => {
           </div>
           <button className="btn-create-account" onClick={() => {
             setEditingProduct(null); setSelectedCategory(""); setSpecs({}); setPriceValue(""); 
-            setDiscountPriceValue(""); setIsFlashSale(false); // Reset sale states
+            setDiscountPriceValue(""); setIsFlashSale(false);
             setStockValue(""); setSelectedFiles([]); setPreviews([]); setIsModalOpen(true);
           }}>
             <Plus size={19} /> <span>Tạo sản phẩm mới</span>
@@ -265,7 +269,7 @@ const ProductManagement = () => {
               <div className="product-card" key={product.id}>
                 <div className="card-image">
                   <img src={displayImg || 'https://via.placeholder.com/200'} alt={product.name} />
-                  {product.is_flash_sale === 1 && (
+                  {product.flash_sale_id && (
                     <div className="flash-sale-badge">
                       <Zap size={10} fill="currentColor" /> Flash Sale
                     </div>
@@ -279,7 +283,7 @@ const ProductManagement = () => {
                   <span className="brand-label">{product.brand_name}</span>
                   <h4 title={product.name}>{product.name}</h4>
                   <div className="card-price-container">
-                    {product.discount_price ? (
+                    {product.discount_price && parseInt(product.discount_price) > 0 ? (
                       <>
                         <span className="card-price sale">{parseInt(product.discount_price).toLocaleString('vi-VN')}đ</span>
                         <span className="card-price original">{parseInt(product.price).toLocaleString('vi-VN')}đ</span>
@@ -353,11 +357,6 @@ const ProductManagement = () => {
                             <img src={src} alt="preview" />
                             {idx === 0 && <div className="main-badge">Ảnh chính</div>}
                             <div className="image-controls">
-                              {idx > 0 && (
-                                <button type="button" onClick={() => moveFile(idx, -1)} className="control-btn" title="Chuyển lên đầu">
-                                  <RotateCcw size={12} style={{ transform: 'rotate(90deg)' }} />
-                                </button>
-                              )}
                               <button type="button" className="control-btn delete" onClick={() => removeFile(idx)} title="Xóa ảnh">
                                 <X size={12} />
                               </button>
@@ -377,7 +376,6 @@ const ProductManagement = () => {
                       <input name="name" type="text" defaultValue={editingProduct?.name || ""} required />
                     </div>
                     
-                    {/* KHU VỰC QUẢN LÝ GIÁ & SALE */}
                     <div className="price-management-box">
                        <div className="form-row">
                         <div className="form-group">
@@ -391,7 +389,7 @@ const ProductManagement = () => {
                       </div>
                       <div className="flash-sale-toggle">
                         <input type="checkbox" id="isFlashSale" checked={isFlashSale} onChange={(e) => setIsFlashSale(e.target.checked)} />
-                        <label htmlFor="isFlashSale"><Zap size={14} fill={isFlashSale ? "#E10600" : "none"} /> Kích hoạt trạng thái Flash Sale</label>
+                        <label htmlFor="isFlashSale"><Zap size={14} fill={isFlashSale ? "#E10600" : "none"} /> Kích hoạt Flash Sale cho đợt hiện tại</label>
                       </div>
                     </div>
 

@@ -1,0 +1,159 @@
+.fs-management-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.fs-admin-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-top: 5px solid #ccc;
+    transition: all 0.3s ease;
+}
+
+.fs-admin-card.active {
+    border-top-color: #E10600;
+}
+
+.fs-card-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.active .fs-card-badge {
+    background: #fff0f0;
+    color: #E10600;
+}
+
+.inactive .fs-card-badge {
+    background: #f1f1f1;
+    color: #888;
+}
+
+.fs-card-icon {
+    margin-bottom: 15px;
+    background: #f9f9f9;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.fs-admin-card h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+}
+
+.fs-time-details {
+    background: #fafafa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.time-row:last-child { margin-bottom: 0; }
+
+.fs-card-footer {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.fs-edit-btn, .fs-delete-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: 0.2s;
+}
+
+.fs-edit-btn { background: #f0f0f0; color: #444; }
+.fs-edit-btn:hover { background: #e0e0e0; }
+
+.fs-delete-btn { background: #fff1f1; color: #e11d48; }
+.fs-delete-btn:hover { background: #ffe4e6; }
+
+/* Switch Toggle UI */
+.status-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #fdf2f2;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider { background-color: #E10600; }
+input:checked + .slider:before { transform: translateX(22px); }
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    color: #888;
+    border: 2px dashed #ddd;
+}

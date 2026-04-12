@@ -189,8 +189,8 @@ const AdminDashboard = () => {
             </div>
             <div className="order-list">
               {data.recentOrders?.map(order => (
-                <div key={order.id} className="order-item" onClick={() => navigate('/admin/orders')}>
-                  <div className="order-info">
+                    <div key={order.id} className="order-item no-click">
+                    <div className="order-info">
                     <span className="order-id">#{order.id}</span>
                     <strong className="customer-name">{order.user}</strong>
                   </div>

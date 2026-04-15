@@ -87,7 +87,7 @@ const Chatbot = () => {
             console.error("❌ Lỗi kết nối Rasa REST:", error);
             setMessages(prev => [...prev, {
                 id: Date.now(),
-                text: "Hệ thống đang bảo trì, Ngọc vui lòng thử lại sau nhé!",
+                text: "Hệ thống đang bảo trì, bạn vui lòng thử lại sau nhé!",
                 sender: "bot"
             }]);
             setIsTyping(false);

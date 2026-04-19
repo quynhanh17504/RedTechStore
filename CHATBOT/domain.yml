@@ -6,18 +6,20 @@ intents:
   - bot_challenge
   - tim_san_pham
   - hoi_san_pham_moi
-  - hoi_ton_kho      
-  - hoi_khuyen_mai  
+  - hoi_ton_kho       
+  - hoi_khuyen_mai   
   - hoi_san_pham_hot 
+  - nlu_fallback        # Thêm intent này để xử lý khi bot không hiểu
 
 entities:
   - category
   - brand
   - product_name
   - filter_new
-  - filter_stock     
-  - filter_sale   
+  - filter_stock      
+  - filter_sale    
   - filter_hot       
+
 slots:
   category:
     type: text
@@ -73,10 +75,11 @@ responses:
     - text: "Mình là RT Bot, trợ lý ảo thông minh của RedTech Store. Mình có thể giúp bạn tra cứu tồn kho, tìm sản phẩm và săn sale cực nhanh!"
 
   utter_default:
-    - text: "Xin lỗi, RT Bot chưa hiểu ý bạn. Bạn có thể thử hỏi: 'iPhone 15 còn hàng không?' hoặc 'Cho xem sản phẩm giảm giá' nhé!"
+    - text: "Dạ, RT Bot chưa hiểu ý bạn lắm. Để mình nối máy cho trợ lý AI thông minh hơn giải đáp giúp bạn nhé..."
 
 actions:
   - action_search_product
+  - action_gemini_talk    # Bắt buộc phải khai báo action mới ở đây
 
 session_config:
   session_expiration_time: 60

@@ -16,14 +16,9 @@ rules:
       - intent: goodbye
       - action: utter_goodbye
 
-  - rule: Tìm kiếm sản phẩm theo yêu cầu
+  - rule: Tìm kiếm sản phẩm (Tên, Danh mục, Thương hiệu)
     steps:
       - intent: tim_san_pham
-      - action: action_search_product
-
-  - rule: Tìm sản phẩm mới nhất
-    steps:
-      - intent: hoi_san_pham_moi
       - action: action_search_product
 
   - rule: Kiểm tra tồn kho sản phẩm
@@ -31,17 +26,25 @@ rules:
       - intent: hoi_ton_kho
       - action: action_search_product
 
-  - rule: Xem sản phẩm đang giảm giá
+  - rule: Xem sản phẩm đang giảm giá (Flash Sale)
     steps:
       - intent: hoi_khuyen_mai
       - action: action_search_product
 
-  - rule: Xem sản phẩm bán chạy/hot
+  - rule: Xem sản phẩm bán chạy (Hot)
     steps:
       - intent: hoi_san_pham_hot
       - action: action_search_product
 
-  - rule: Phản hồi mặc định khi không hiểu ý khách
+  # --- QUAN TRỌNG: CHUYỂN CÂU HỎI NGOÀI LỀ SANG GEMINI ---
+  - rule: Phản hồi thông minh bằng Gemini khi không hiểu ý khách (Fallback)
     steps:
       - intent: nlu_fallback
-      - action: utter_default
+      - action: action_gemini_talk
+
+  # Rule này đảm bảo nếu Rasa hoàn toàn không tự tin về Intent nào (nthreshold thấp)
+  # nó cũng sẽ đẩy sang Gemini xử lý thay vì im lặng.
+  - rule: Out of scope fallback
+    steps:
+      - intent: out_of_scope
+      - action: action_gemini_talk

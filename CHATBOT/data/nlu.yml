@@ -7,23 +7,26 @@ nlu:
     - hello
     - hi
     - chào bot
-    - ê bot
+    - xin chào
     - bắt đầu
+    - ê bot
 
 - intent: goodbye
   examples: |
     - tạm biệt
     - bye
-    - cút
-    - thôi mình đi đây
     - nghỉ nhé
+    - thôi mình đi đây
+    - cút
+    - see you
 
 - intent: bot_challenge
   examples: |
     - bạn là ai?
-    - bạn là người hay máy?
-    - bot à?
+    - bạn tên gì?
     - ai đang nói đấy
+    - bot à?
+    - bạn là người hay máy?
 
 - intent: tim_san_pham
   examples: |
@@ -32,14 +35,16 @@ nlu:
     - cho xem [laptop](category)
     - có [chuột](category) nào không?
     - tìm [macbook](product_name) của [apple](brand)
-    - liệt kê [tai nghe](category) [sony](brand)
     - [bàn phím](category) [akko](brand)
+    - liệt kê [tai nghe](category) [sony](brand)
     - tìm giúp mình [dell xps](product_name)
     - shop có [màn hình](category) [lg](brand) không?
     - [oppo](brand)
     - [laptop](category) [gaming](product_name)
     - [điện thoại](category) [xiaomi](brand)
     - [tai nghe](category) [marshall](brand)
+    - xem [chuột không dây](product_name)
+    - tìm [ipad air](product_name)
 
 - intent: hoi_ton_kho
   examples: |
@@ -49,6 +54,8 @@ nlu:
     - cái [macbook m3](product_name) này còn [có sẵn](filter_stock) không?
     - cho hỏi [số lượng](filter_stock) [chuột logitech](product_name) còn bao nhiêu?
     - [còn](filter_stock) hàng không bot?
+    - mẫu này [hết hàng](filter_stock) chưa?
+    - xem [số lượng còn lại](filter_stock) của [airpods](product_name)
 
 - intent: hoi_khuyen_mai
   examples: |
@@ -57,6 +64,8 @@ nlu:
     - sản phẩm nào đang [khuyến mãi](filter_sale)
     - tìm đồ [giá rẻ](filter_sale)
     - đang [sale](filter_sale) cái nào thế
+    - cho xem đồ [đang giảm giá](filter_sale)
+    - danh sách [ưu đãi](filter_sale) hôm nay
 
 - intent: hoi_san_pham_hot
   examples: |
@@ -64,22 +73,17 @@ nlu:
     - cho xem đồ [hot](filter_hot)
     - sản phẩm nào [phổ biến](filter_hot) hiện nay
     - xem [top bán chạy](filter_hot)
+    - mẫu nào [nhiều người mua](filter_hot)
+    - liệt kê các máy [hot nhất](filter_hot)
 
-- intent: hoi_san_pham_moi
+- intent: nlu_fallback
   examples: |
-    - có gì [mới](filter_new) không?
-    - hàng [mới về](filter_new)
-    - xem [sản phẩm mới nhất](filter_new)
-    - bộ sưu tập [mới](filter_new)
-
-# Định nghĩa từ đồng nghĩa để Rasa gom nhóm dữ liệu chính xác
-- synonym: điện thoại
-  examples: |
-    - đt
-    - smartphone
-    - mobile
-
-- synonym: máy tính
-  examples: |
-    - laptop
-    - máy tính xách tay
+    - nói tiếng anh đi
+    - can you speak english
+    - kể chuyện cười đi
+    - thời tiết hôm nay thế nào
+    - 1 cộng 1 bằng mấy
+    - bạn có biết nấu ăn không
+    - tư vấn tình cảm đi bot
+    - dịch giúp mình câu này sang tiếng hàn
+    - kể cho mình một câu chuyện

@@ -1,48 +1,78 @@
 version: "3.1"
 
-stories:
-- story: chào hỏi và tìm sản phẩm
-  steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: tim_san_pham
-  - action: action_search_product
+intents:
+  - greet
+  - goodbye
+  - bot_challenge
+  - tim_san_pham
+  - hoi_ton_kho
+  - hoi_khuyen_mai
+  - hoi_san_pham_hot
+  - nlu_fallback
 
-- story: tìm sản phẩm trực tiếp
-  steps:
-  - intent: tim_san_pham
-  - action: action_search_product
+entities:
+  - product_name
+  - brand
+  - category
+  - filter_stock
+  - filter_sale
+  - filter_hot
 
-- story: kiểm tra tồn kho sau khi tìm
-  steps:
-  - intent: tim_san_pham
-  - action: action_search_product
-  - intent: hoi_ton_kho
-  - action: action_search_product
+slots:
+  product_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: product_name
+  brand:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: brand
+  category:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: category
+  filter_stock:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: filter_stock
+  filter_sale:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: filter_sale
+  filter_hot:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: filter_hot
 
-- story: hỏi sản phẩm mới nhất
-  steps:
-  - intent: hoi_san_pham_moi
-  - action: action_search_product
+responses:
+  utter_greet:
+    - text: "Chào bạn! Mình là RT-Bot 🤖 của RedTechStore. Mình có thể giúp bạn tìm sản phẩm, kiểm tra tồn kho hoặc săn hàng Flash Sale. Bạn cần hỗ trợ gì ạ?"
 
-- story: săn hàng giảm giá
-  steps:
-  - intent: hoi_khuyen_mai
-  - action: action_search_product
+  utter_goodbye:
+    - text: "Tạm biệt bạn nhé! Hy vọng sớm gặp lại bạn tại RedTechStore. Chúc bạn một ngày tốt lành! ✨"
 
-- story: xem hàng hot bán chạy
-  steps:
-  - intent: hoi_san_pham_hot
-  - action: action_search_product
+  utter_iamabot:
+    - text: "Dạ, mình là RT-Bot - trợ lý ảo thông minh được tích hợp AI. Mình đang trực tại shop để hỗ trợ bạn tra cứu sản phẩm nhanh nhất đấy ạ! 🚀"
 
-- story: khách hàng tạm biệt
-  steps:
-  - intent: goodbye
-  - action: utter_goodbye
+  utter_default:
+    - text: "Dạ, vấn đề này hơi khó một xíu. Để mình nhờ trợ lý AI thông minh giải đáp cho bạn ngay nhé..."
 
-- story: hỏi bot là ai rồi tìm đồ
-  steps:
-  - intent: bot_challenge
-  - action: utter_iamabot
-  - intent: tim_san_pham
-  - action: action_search_product
+actions:
+  - action_search_product
+  - action_gemini_talk
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

@@ -9,6 +9,8 @@ const brandRoutes = require('./routes/brand');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/oder'); 
 const reviewRoutes = require('./routes/review');
+const chatbotRoutes = require('./routes/chatbot'); 
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -20,6 +22,7 @@ app.use('/client/brands', brandRoutes);
 app.use('/client/cart', cartRoutes);
 app.use('/client/order', orderRoutes);
 app.use('/client/review', reviewRoutes);
+app.use('/client/chatbot', chatbotRoutes);
 
 const PORT = 3005; 
 

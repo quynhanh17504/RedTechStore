@@ -172,6 +172,12 @@ const ProductDetail = () => {
             </div>
 
             <h1 className="pd-product-name">{product.name}</h1>
+            {/* BỔ SUNG: Hiển thị mô tả ngắn gọn bên dưới tên sản phẩm */}
+            {product.description && (
+              <div className="pd-short-desc">
+                {product.description}
+              </div>
+            )}
             
             <div className="pd-price-row">
               {hasDiscount ? (

@@ -12,6 +12,9 @@ const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  // BỔ SUNG: State cho danh sách Flash Sale
+  const [flashSales, setFlashSales] = useState([]);
+  const [selectedFlashSale, setSelectedFlashSale] = useState("");
   
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
@@ -38,14 +41,16 @@ const ProductManagement = () => {
 
   const fetchData = async () => {
     try {
-      const [pRes, cRes, bRes] = await Promise.all([
+      const [pRes, cRes, bRes, fsRes] = await Promise.all([
         axios.get('http://localhost:5000/admin/products'),
         axios.get('http://localhost:5000/admin/categories'),
-        axios.get('http://localhost:5000/admin/brands')
+        axios.get('http://localhost:5000/admin/brands'),
+        axios.get('http://localhost:5000/admin/flash-sales') // BỔ SUNG: Lấy danh sách Flash Sale[cite: 8]
       ]);
       setProducts(pRes.data);
       setCategories(cRes.data);
       setBrands(bRes.data);
+      setFlashSales(fsRes.data); // Cập nhật state flashSales[cite: 8]
     } catch (err) {
       toast.error("Không thể kết nối đến máy chủ");
     }
@@ -149,18 +154,18 @@ const ProductManagement = () => {
       setPreviews([product.image]);
     }
     
-    // Xử lý giá hiển thị
     setPriceValue(parseInt(product.price).toLocaleString('en-US'));
     
-    // SỬA LỖI: Chỉ hiện giá sale nếu nó lớn hơn 0
     if (product.discount_price && parseInt(product.discount_price) > 0) {
         setDiscountPriceValue(parseInt(product.discount_price).toLocaleString('en-US'));
     } else {
         setDiscountPriceValue("");
     }
     
-    // Flash Sale dựa trên flash_sale_id có tồn tại hay không
-    setIsFlashSale(product.flash_sale_id !== null && product.flash_sale_id !== undefined);
+    // CẬP NHẬT: Xử lý Flash Sale khi mở modal sửa[cite: 8]
+    const hasFlashSale = product.flash_sale_id !== null && product.flash_sale_id !== undefined;
+    setIsFlashSale(hasFlashSale);
+    setSelectedFlashSale(product.flash_sale_id ? product.flash_sale_id.toString() : "");
     
     setStockValue(product.stock);
     setSelectedFiles([]); 
@@ -168,40 +173,50 @@ const ProductManagement = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  // BỔ SUNG: Kiểm tra xem có ảnh nào không (cả ảnh cũ đang sửa và ảnh mới đang chọn)
+  if (previews.length === 0) {
+    toast.error("Vui lòng tải lên ít nhất 1 hình ảnh cho sản phẩm!");
+    return; // Ngừng thực hiện submit
+  }
+  
     const formData = new FormData();
     formData.append('name', e.target.name.value);
     formData.append('price', priceValue.replace(/,/g, ""));
     
-    // SỬA LỖI: Gửi chuỗi rỗng nếu không có giá sale để backend set NULL
     const cleanDiscountPrice = discountPriceValue.replace(/,/g, "");
     formData.append('discount_price', cleanDiscountPrice !== "" ? cleanDiscountPrice : ""); 
     
+    // CẬP NHẬT: Gửi kèm ID Flash Sale đã chọn[cite: 8]
     formData.append('is_flash_sale', isFlashSale ? 1 : 0);
+    formData.append('selectedFlashSale', selectedFlashSale);
+    
     formData.append('category_id', selectedCategory);
     formData.append('brand_id', e.target.brand_id.value);
     formData.append('stock', stockValue);
     formData.append('description', e.target.description.value);
     formData.append('specifications', JSON.stringify(specs));
 
-    const existingImages = previews.filter(p => !p.startsWith('blob:'));
-    formData.append('existingImages', JSON.stringify(existingImages));
-    selectedFiles.forEach(file => formData.append('images', file));
+   // Gửi thông tin ảnh
+  const existingImages = previews.filter(p => !p.startsWith('blob:'));
+  formData.append('existingImages', JSON.stringify(existingImages));
+  selectedFiles.forEach(file => formData.append('images', file));
 
-    const load = toast.loading(editingProduct ? "Đang cập nhật..." : "Đang tạo...");
-    try {
-      if (editingProduct) {
-        await axios.put(`http://localhost:5000/admin/products/update/${editingProduct.id}`, formData);
-      } else {
-        await axios.post('http://localhost:5000/admin/products/add', formData);
-      }
-      toast.success("Thành công!", { id: load });
-      setIsModalOpen(false);
-      fetchData();
-    } catch (err) {
-      toast.error("Thao tác thất bại", { id: load });
+  const load = toast.loading(editingProduct ? "Đang cập nhật..." : "Đang tạo...");
+  try {
+    if (editingProduct) {
+      await axios.put(`http://localhost:5000/admin/products/update/${editingProduct.id}`, formData);
+    } else {
+      await axios.post('http://localhost:5000/admin/products/add', formData);
     }
-  };
+    toast.success("Thành công!", { id: load });
+    setIsModalOpen(false);
+    fetchData();
+  } catch (err) {
+    toast.error("Thao tác thất bại", { id: load });
+  }
+};
 
   return (
     <div className="admin-layout" style={{ fontFamily: 'Cabin, sans-serif' }}>
@@ -214,14 +229,14 @@ const ProductManagement = () => {
           </div>
           <button className="btn-create-account" onClick={() => {
             setEditingProduct(null); setSelectedCategory(""); setSpecs({}); setPriceValue(""); 
-            setDiscountPriceValue(""); setIsFlashSale(false);
+            setDiscountPriceValue(""); setIsFlashSale(false); setSelectedFlashSale(""); // Reset thêm selectedFlashSale
             setStockValue(""); setSelectedFiles([]); setPreviews([]); setIsModalOpen(true);
           }}>
             <Plus size={19} /> <span>Tạo sản phẩm mới</span>
           </button>
         </header>
 
-        {/* --- BỘ LỌC --- */}
+        {/* --- BỘ LỌC GIỮ NGUYÊN --- */}
         <section className="filter-section">
           <div className="filter-container">
             <div className="search-wrapper">
@@ -256,7 +271,7 @@ const ProductManagement = () => {
           </div>
         </section>
 
-        {/* --- DANH SÁCH SẢN PHẨM --- */}
+        {/* --- DANH SÁCH SẢN PHẨM GIỮ NGUYÊN --- */}
         <div className="product-grid">
           {currentProducts.map(product => {
              let displayImg = 'https://via.placeholder.com/200';
@@ -302,7 +317,7 @@ const ProductManagement = () => {
           })}
         </div>
 
-        {/* --- PHÂN TRANG --- */}
+        {/* --- PHÂN TRANG GIỮ NGUYÊN --- */}
         {totalPages > 1 && (
           <div className="pagination-container">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Trước</button>
@@ -313,7 +328,7 @@ const ProductManagement = () => {
           </div>
         )}
 
-        {/* --- MODAL XÓA --- */}
+        {/* --- MODAL XÓA GIỮ NGUYÊN --- */}
         {isDeleteModalOpen && (
           <div className="modal-overlay">
             <div className="modal-container delete-confirm-modal animate-scale-up">
@@ -328,7 +343,7 @@ const ProductManagement = () => {
           </div>
         )}
 
-        {/* --- MODAL FORM THÊM/SỬA --- */}
+        {/* --- MODAL FORM THÊM/SỬA (CẬP NHẬT PHẦN FLASH SALE) --- */}
         {isModalOpen && (
           <div className="modal-overlay">
             <div className="modal-container product-modal animate-slide-up">
@@ -387,9 +402,40 @@ const ProductManagement = () => {
                           <input type="text" value={discountPriceValue} onChange={(e) => setDiscountPriceValue(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} placeholder="Để trống nếu không giảm" />
                         </div>
                       </div>
-                      <div className="flash-sale-toggle">
-                        <input type="checkbox" id="isFlashSale" checked={isFlashSale} onChange={(e) => setIsFlashSale(e.target.checked)} />
-                        <label htmlFor="isFlashSale"><Zap size={14} fill={isFlashSale ? "#E10600" : "none"} /> Kích hoạt Flash Sale cho đợt hiện tại</label>
+
+                      {/* CẬP NHẬT: Phần chọn Flash Sale với Dropdown[cite: 8] */}
+                      <div className="flash-sale-selection-group">
+                        <div className="flash-sale-toggle">
+                          <input 
+                            type="checkbox" 
+                            id="isFlashSale" 
+                            checked={isFlashSale} 
+                            onChange={(e) => {
+                              setIsFlashSale(e.target.checked);
+                              if(!e.target.checked) setSelectedFlashSale(""); // Xóa ID đợt sale nếu bỏ tick[cite: 8]
+                            }} 
+                          />
+                          <label htmlFor="isFlashSale"><Zap size={14} fill={isFlashSale ? "#E10600" : "none"} /> Tham gia chương trình Flash Sale</label>
+                        </div>
+
+                        {isFlashSale && (
+                          <div className="form-group mt-2 animate-slide-down">
+                            <label>Chọn đợt Flash Sale áp dụng</label>
+                            <select 
+                              value={selectedFlashSale} 
+                              onChange={(e) => setSelectedFlashSale(e.target.value)}
+                              required={isFlashSale}
+                            >
+                              <option value="">-- Chọn chiến dịch đang chạy --</option>
+                              {flashSales
+                                .filter(fs => fs.status === 1) // Chỉ hiện các chiến dịch đang kích hoạt[cite: 8]
+                                .map(fs => (
+                                  <option key={fs.id} value={fs.id}>{fs.name}</option>
+                                ))
+                              }
+                            </select>
+                          </div>
+                        )}
                       </div>
                     </div>
 

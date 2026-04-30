@@ -3,31 +3,40 @@ const router = express.Router();
 const db = require('../db');
 const cron = require('node-cron'); 
 
-// --- TỰ ĐỘNG HÓA ---
-// Quét mỗi phút một lần để tắt các chiến dịch đã quá giờ kết thúc
+// TỰ ĐỘNG HÓA: Quét mỗi phút để dọn dẹp các đợt Sale hết hạn
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
-        // Cập nhật status về 0 cho các chiến dịch có end_time < thời gian hiện tại và vẫn đang active
-        const [result] = await db.execute(
-            'UPDATE flash_sales SET status = 0 WHERE end_time < ? AND status = 1', 
+        
+        // 1. Tìm các chiến dịch đã quá giờ kết thúc nhưng vẫn đang để status = 1[cite: 6]
+        const [expiredSales] = await db.execute(
+            'SELECT id FROM flash_sales WHERE end_time < ? AND status = 1', 
             [now]
         );
-        if (result.affectedRows > 0) {
-            console.log(`[Flash Sale] Đã tự động tắt ${result.affectedRows} chiến dịch hết hạn.`);
+
+        if (expiredSales.length > 0) {
+            const ids = expiredSales.map(s => s.id);
+            
+            // 2. Gỡ bỏ flash_sale_id khỏi bảng products để sản phẩm trở về giá thường
+            await db.execute(
+                `UPDATE products SET flash_sale_id = NULL WHERE flash_sale_id IN (${ids.join(',')})`
+            );
+            
+            // 3. Cập nhật trạng thái chiến dịch Flash Sale thành kết thúc (0)[cite: 6]
+            await db.execute(
+                `UPDATE flash_sales SET status = 0 WHERE id IN (${ids.join(',')})`
+            );
+            
+            console.log(`[System] Đã tự động kết thúc ${ids.length} chiến dịch Flash Sale.`);
         }
     } catch (err) {
-        console.error("[Flash Sale Cron Error]:", err.message);
+        console.error("[Cron Error]:", err.message);
     }
 });
 
-// 1. Lấy tất cả chiến dịch (Bổ sung logic kiểm tra thời gian thực)
+// Lấy danh sách Flash Sale cho dropdown[cite: 6]
 router.get('/', async (req, res) => {
     try {
-        // Trước khi trả về cho UI, chạy một câu lệnh check nhanh để đảm bảo dữ liệu hiển thị là mới nhất
-        const now = new Date();
-        await db.execute('UPDATE flash_sales SET status = 0 WHERE end_time < ? AND status = 1', [now]);
-
         const [rows] = await db.execute('SELECT * FROM flash_sales ORDER BY created_at DESC');
         res.json(rows);
     } catch (err) {

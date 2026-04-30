@@ -182,13 +182,7 @@ const Checkout = () => {
                                         <span>Bạn sẽ thanh toán bằng tiền mặt khi shipper giao hàng đến.</span>
                                     </div>
                                 </label>
-                                <label className={`payment-item ${formData.paymentMethod === 'Transfer' ? 'active' : ''}`}>
-                                    <input type="radio" name="paymentMethod" value="Transfer" checked={formData.paymentMethod === 'Transfer'} onChange={handleChange} />
-                                    <div className="payment-info">
-                                        <strong>Chuyển khoản Ngân hàng / Momo</strong>
-                                        <span>Chuyển khoản nhanh qua mã QR (Xử lý ưu tiên).</span>
-                                    </div>
-                                </label>
+                    
                             </div>
                         </div>
                     </div>

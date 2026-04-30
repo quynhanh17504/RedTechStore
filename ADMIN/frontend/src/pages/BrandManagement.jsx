@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import * as XLSX from 'xlsx';
 import './BrandManagement.css';
 
 const BrandManagement = () => {
@@ -73,19 +72,6 @@ const BrandManagement = () => {
     }
   };
 
-  const exportToExcel = () => {
-    const data = brands.map(b => ({
-      "Thương hiệu": b.name,
-      "Điện thoại": b.phone,
-      "Laptop": b.laptop,
-      "Phụ kiện": b.accessory,
-      "Tổng": (b.phone || 0) + (b.laptop || 0) + (b.accessory || 0)
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Brands");
-    XLSX.writeFile(wb, "RedTech_Brands.xlsx");
-  };
 
   const filteredBrands = brands.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -100,11 +86,6 @@ const BrandManagement = () => {
           </div>
           
           <div className="header-actions-group">
-            <div className="export-tools">
-              <button className="tool-btn excel" onClick={exportToExcel} title="Xuất Excel">
-                <FileSpreadsheet size={20} />
-              </button>
-            </div>
             <button className="btn-create-account" onClick={() => { setEditingBrand(null); setBrandName(""); setIsModalOpen(true); }}>
               <Plus size={19} /> <span>Thêm thương hiệu</span>
             </button>

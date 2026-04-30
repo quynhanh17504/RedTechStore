@@ -5,20 +5,18 @@ intents:
   - goodbye
   - bot_challenge
   - tim_san_pham
-  - hoi_san_pham_moi
-  - hoi_ton_kho       
-  - hoi_khuyen_mai   
-  - hoi_san_pham_hot 
-  - nlu_fallback        # Thêm intent này để xử lý khi bot không hiểu
+  - hoi_ton_kho
+  - hoi_khuyen_mai
+  - hoi_san_pham_hot
+  - nlu_fallback
 
 entities:
   - category
   - brand
   - product_name
-  - filter_new
-  - filter_stock      
-  - filter_sale    
-  - filter_hot       
+  - filter_stock
+  - filter_sale
+  - filter_hot
 
 slots:
   category:
@@ -39,27 +37,21 @@ slots:
     mappings:
       - type: from_entity
         entity: product_name
-  filter_new:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: filter_new
   filter_stock:
     type: text
-    influence_conversation: true
+    influence_conversation: false
     mappings:
       - type: from_entity
         entity: filter_stock
   filter_sale:
     type: text
-    influence_conversation: true
+    influence_conversation: false
     mappings:
       - type: from_entity
         entity: filter_sale
   filter_hot:
     type: text
-    influence_conversation: true
+    influence_conversation: false
     mappings:
       - type: from_entity
         entity: filter_hot
@@ -75,11 +67,11 @@ responses:
     - text: "Mình là RT Bot, trợ lý ảo thông minh của RedTech Store. Mình có thể giúp bạn tra cứu tồn kho, tìm sản phẩm và săn sale cực nhanh!"
 
   utter_default:
-    - text: "Dạ, RT Bot chưa hiểu ý bạn lắm. Để mình nối máy cho trợ lý AI thông minh hơn giải đáp giúp bạn nhé..."
+    - text: "Dạ, RT Bot chưa hiểu ý bạn lắm. Để mình nối máy cho trợ lý AI giải đáp giúp bạn nhé..."
 
 actions:
   - action_search_product
-  - action_gemini_talk    # Bắt buộc phải khai báo action mới ở đây
+  - action_gemini_talk
 
 session_config:
   session_expiration_time: 60

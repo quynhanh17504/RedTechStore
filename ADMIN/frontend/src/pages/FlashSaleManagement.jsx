@@ -29,30 +29,39 @@ const FlashSaleManagement = () => {
 
   useEffect(() => { fetchSales(); }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = {
-      name: e.target.name.value,
-      start_time: e.target.start_time.value,
-      end_time: e.target.end_time.value,
-      status: e.target.status.checked ? 1 : 0
-    };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const endTime = new Date(e.target.end_time.value);
+  const now = new Date();
 
-    const load = toast.loading("Đang xử lý...");
-    try {
-      if (editingSale) {
-        await axios.put(`http://localhost:5000/admin/flash-sales/update/${editingSale.id}`, formData);
-        toast.success("Cập nhật thành công", { id: load });
-      } else {
-        await axios.post('http://localhost:5000/admin/flash-sales/add', formData);
-        toast.success("Tạo chiến dịch mới thành công", { id: load });
-      }
-      setIsModalOpen(false);
-      fetchSales();
-    } catch (err) {
-      toast.error("Thao tác thất bại", { id: load });
-    }
+  // Kiểm tra nếu thời gian kết thúc nhỏ hơn hiện tại
+  if (endTime < now && e.target.status.checked) {
+    toast.error("Thời gian kết thúc không thể ở trong quá khứ khi đang kích hoạt!");
+    return;
+  }
+
+  const formData = {
+    name: e.target.name.value,
+    start_time: e.target.start_time.value,
+    end_time: e.target.end_time.value,
+    status: e.target.status.checked ? 1 : 0
   };
+
+  const load = toast.loading("Đang xử lý...");
+  try {
+    if (editingSale) {
+      await axios.put(`http://localhost:5000/admin/flash-sales/update/${editingSale.id}`, formData);
+      toast.success("Cập nhật thành công", { id: load });
+    } else {
+      await axios.post('http://localhost:5000/admin/flash-sales/add', formData);
+      toast.success("Tạo chiến dịch mới thành công", { id: load });
+    }
+    setIsModalOpen(false);
+    fetchSales(); // Load lại danh sách để cập nhật trạng thái mới nhất
+  } catch (err) {
+    toast.error("Thao tác thất bại", { id: load });
+  }
+};
 
   const deleteSale = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa chiến dịch này? Các sản phẩm liên quan sẽ ngừng Flash Sale.")) {

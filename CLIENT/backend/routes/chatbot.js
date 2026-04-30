@@ -11,7 +11,6 @@ router.get('/search', async (req, res) => {
         let params = [];
 
         // 1. Truy vấn Flash Sale
-        // Dựa theo DB: p.flash_sale_id nối với bảng flash_sales
         if (type === 'flash-sale') {
             query = `
                 SELECT p.id, p.name, p.price, p.stock, p.image, b.name as brand_name 
@@ -25,7 +24,6 @@ router.get('/search', async (req, res) => {
         } 
         
         // 2. Truy vấn Bán chạy
-        // Dựa theo DB: products -> order_items -> orders
         else if (type === 'best-sellers') {
             query = `
                 SELECT p.id, p.name, p.price, p.stock, p.image, SUM(oi.quantity) as total_sold
@@ -39,7 +37,7 @@ router.get('/search', async (req, res) => {
             `;
         }
 
-        // 3. Tìm kiếm linh hoạt (Mặc định)
+        // 3. Tìm kiếm linh hoạt (Trường hợp tìm Laptop, iPhone, v.v.)
         else {
             query = `
                 SELECT p.id, p.name, p.price, p.stock, p.image, c.name as category_name, b.name as brand_name 
@@ -49,15 +47,16 @@ router.get('/search', async (req, res) => {
                 WHERE 1=1
             `;
 
-            if (search) {
+            if (search && search.trim() !== "") {
                 query += ` 
                     AND (p.name LIKE ? 
                     OR b.name LIKE ? 
                     OR c.name LIKE ?)
                 `;
-                const searchTerm = `%${search}%`;
+                const searchTerm = `%${search.trim()}%`;
                 params = [searchTerm, searchTerm, searchTerm];
             }
+            // Sắp xếp sản phẩm mới nhất lên đầu nếu tìm kiếm chung
             query += ` ORDER BY p.id DESC LIMIT 6`;
         }
 
@@ -67,13 +66,20 @@ router.get('/search', async (req, res) => {
         const formattedData = rows.map(p => {
             let imgList = [];
             try {
-                // Xử lý ảnh: Nếu là chuỗi JSON mảng thì parse, nếu không thì tạo mảng 1 phần tử
-                if (typeof p.image === 'string' && p.image.startsWith('[')) {
-                    imgList = JSON.parse(p.image);
+                // Xử lý ảnh linh hoạt cho cả chuỗi JSON và chuỗi đơn
+                if (p.image) {
+                    if (typeof p.image === 'string' && p.image.startsWith('[')) {
+                        imgList = JSON.parse(p.image);
+                    } else if (Array.isArray(p.image)) {
+                        imgList = p.image;
+                    } else {
+                        imgList = [p.image];
+                    }
                 } else {
-                    imgList = p.image ? [p.image] : ['default.jpg'];
+                    imgList = ['default.jpg'];
                 }
             } catch (e) {
+                console.error("Lỗi parse ảnh:", e);
                 imgList = ['default.jpg'];
             }
             
@@ -81,12 +87,15 @@ router.get('/search', async (req, res) => {
                 id: p.id,
                 name: p.name,
                 price: p.price,
-                stock: p.stock,
+                stock: p.stock || 0,
                 image: imgList,
                 brand: p.brand_name || '',
                 category: p.category_name || ''
             };
         });
+
+        // Debug nhẹ để Ngọc kiểm tra log ở terminal Node.js
+        console.log(`🔍 Chatbot tìm kiếm: "${search || 'N/A'}" | Kết quả: ${formattedData.length}`);
 
         return res.json(formattedData);
 

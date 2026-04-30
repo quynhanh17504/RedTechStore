@@ -16,6 +16,7 @@ rules:
       - intent: goodbye
       - action: utter_goodbye
 
+  # --- NHÓM TRA CỨU SẢN PHẨM (GỌI ACTION SERVER) ---
   - rule: Tìm kiếm sản phẩm (Tên, Danh mục, Thương hiệu)
     steps:
       - intent: tim_san_pham
@@ -36,15 +37,15 @@ rules:
       - intent: hoi_san_pham_hot
       - action: action_search_product
 
-  # --- QUAN TRỌNG: CHUYỂN CÂU HỎI NGOÀI LỀ SANG GEMINI ---
-  - rule: Phản hồi thông minh bằng Gemini khi không hiểu ý khách (Fallback)
+  # --- NHÓM XỬ LÝ THÔNG MINH (GEMINI FALLBACK) ---
+  # Rule này bắt các intent ngoài lề đã định nghĩa trong nlu.yml
+  - rule: Phản hồi thông minh bằng Gemini khi khách hỏi ngoài lề
     steps:
       - intent: nlu_fallback
       - action: action_gemini_talk
 
-  # Rule này đảm bảo nếu Rasa hoàn toàn không tự tin về Intent nào (nthreshold thấp)
-  # nó cũng sẽ đẩy sang Gemini xử lý thay vì im lặng.
-  - rule: Out of scope fallback
+  # Rule này xử lý khi Rasa hoàn toàn không nhận diện được intent (Out of scope)[cite: 5]
+  - rule: Xử lý khi nằm ngoài phạm vi hiểu biết
     steps:
       - intent: out_of_scope
       - action: action_gemini_talk

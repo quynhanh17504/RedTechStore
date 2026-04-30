@@ -1,10 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const cron = require('node-cron'); 
 
-// 1. Lấy tất cả các chiến dịch Flash Sale
+// --- TỰ ĐỘNG HÓA ---
+// Quét mỗi phút một lần để tắt các chiến dịch đã quá giờ kết thúc
+cron.schedule('* * * * *', async () => {
+    try {
+        const now = new Date();
+        // Cập nhật status về 0 cho các chiến dịch có end_time < thời gian hiện tại và vẫn đang active
+        const [result] = await db.execute(
+            'UPDATE flash_sales SET status = 0 WHERE end_time < ? AND status = 1', 
+            [now]
+        );
+        if (result.affectedRows > 0) {
+            console.log(`[Flash Sale] Đã tự động tắt ${result.affectedRows} chiến dịch hết hạn.`);
+        }
+    } catch (err) {
+        console.error("[Flash Sale Cron Error]:", err.message);
+    }
+});
+
+// 1. Lấy tất cả chiến dịch (Bổ sung logic kiểm tra thời gian thực)
 router.get('/', async (req, res) => {
     try {
+        // Trước khi trả về cho UI, chạy một câu lệnh check nhanh để đảm bảo dữ liệu hiển thị là mới nhất
+        const now = new Date();
+        await db.execute('UPDATE flash_sales SET status = 0 WHERE end_time < ? AND status = 1', [now]);
+
         const [rows] = await db.execute('SELECT * FROM flash_sales ORDER BY created_at DESC');
         res.json(rows);
     } catch (err) {
@@ -58,7 +81,6 @@ router.delete('/delete/:id', async (req, res) => {
         const { id } = req.params;
         
         // Khi xóa chiến dịch, database sẽ tự SET NULL flash_sale_id trong bảng products 
-        // nhờ vào CONSTRAINT ON DELETE SET NULL mà mình đã viết ở SQL bước trước.
         await db.execute('DELETE FROM flash_sales WHERE id = ?', [id]);
         
         res.json({ message: "Đã xóa chiến dịch" });

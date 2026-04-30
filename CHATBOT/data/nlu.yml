@@ -33,6 +33,8 @@ nlu:
     - tìm [iphone](product_name)
     - tôi muốn mua [samsung](brand)
     - cho xem [laptop](category)
+    - tìm [laptop dell](product_name)
+    - tìm [laptop gaming](product_name)
     - có [chuột](category) nào không?
     - tìm [macbook](product_name) của [apple](brand)
     - [bàn phím](category) [akko](brand)
@@ -40,11 +42,13 @@ nlu:
     - tìm giúp mình [dell xps](product_name)
     - shop có [màn hình](category) [lg](brand) không?
     - [oppo](brand)
-    - [laptop](category) [gaming](product_name)
     - [điện thoại](category) [xiaomi](brand)
     - [tai nghe](category) [marshall](brand)
     - xem [chuột không dây](product_name)
     - tìm [ipad air](product_name)
+    - mình cần mua [máy tính xách tay](category)
+    - [macbook m3](product_name) giá bao nhiêu
+    - tìm [laptop hp](product_name)
 
 - intent: hoi_ton_kho
   examples: |
@@ -56,6 +60,7 @@ nlu:
     - [còn](filter_stock) hàng không bot?
     - mẫu này [hết hàng](filter_stock) chưa?
     - xem [số lượng còn lại](filter_stock) của [airpods](product_name)
+    - [laptop lenovo](product_name) còn [hàng](filter_stock) không shop
 
 - intent: hoi_khuyen_mai
   examples: |

@@ -1,78 +1,41 @@
 version: "3.1"
 
-intents:
-  - greet
-  - goodbye
-  - bot_challenge
-  - tim_san_pham
-  - hoi_ton_kho
-  - hoi_khuyen_mai
-  - hoi_san_pham_hot
-  - nlu_fallback
+stories:
 
-entities:
-  - product_name
-  - brand
-  - category
-  - filter_stock
-  - filter_sale
-  - filter_hot
+- story: Khách hàng tìm sản phẩm thành công và tạm biệt
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: tim_san_pham
+    - action: action_search_product
+    - intent: goodbye
+    - action: utter_goodbye
 
-slots:
-  product_name:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: product_name
-  brand:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: brand
-  category:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: category
-  filter_stock:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: filter_stock
-  filter_sale:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: filter_sale
-  filter_hot:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: filter_hot
+- story: Khách hàng kiểm tra tồn kho sau đó hỏi khuyến mãi
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: hoi_ton_kho
+    - action: action_search_product
+    - intent: hoi_khuyen_mai
+    - action: action_search_product
+    - intent: goodbye
+    - action: utter_goodbye
 
-responses:
-  utter_greet:
-    - text: "Chào bạn! Mình là RT-Bot 🤖 của RedTechStore. Mình có thể giúp bạn tìm sản phẩm, kiểm tra tồn kho hoặc săn hàng Flash Sale. Bạn cần hỗ trợ gì ạ?"
+- story: Khách hỏi sản phẩm hot và mua hàng
+  steps:
+    - intent: hoi_san_pham_hot
+    - action: action_search_product
+    - intent: tim_san_pham
+    - action: action_search_product
+    - intent: goodbye
+    - action: utter_goodbye
 
-  utter_goodbye:
-    - text: "Tạm biệt bạn nhé! Hy vọng sớm gặp lại bạn tại RedTechStore. Chúc bạn một ngày tốt lành! ✨"
-
-  utter_iamabot:
-    - text: "Dạ, mình là RT-Bot - trợ lý ảo thông minh được tích hợp AI. Mình đang trực tại shop để hỗ trợ bạn tra cứu sản phẩm nhanh nhất đấy ạ! 🚀"
-
-  utter_default:
-    - text: "Dạ, vấn đề này hơi khó một xíu. Để mình nhờ trợ lý AI thông minh giải đáp cho bạn ngay nhé..."
-
-actions:
-  - action_search_product
-  - action_gemini_talk
-
-session_config:
-  session_expiration_time: 60
-  carry_over_slots_to_new_session: true
+- story: Hội thoại ngoài lề với AI sau khi tìm sản phẩm
+  steps:
+    - intent: tim_san_pham
+    - action: action_search_product
+    - intent: nlu_fallback
+    - action: action_gemini_talk
+    - intent: goodbye
+    - action: utter_goodbye

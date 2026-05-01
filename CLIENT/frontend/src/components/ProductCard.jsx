@@ -9,9 +9,13 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const isOutOfStock = product.stock <= 0;
   
-  // Kiểm tra xem sản phẩm có đang Flash Sale không
-  const hasDiscount = product.discount_price && product.discount_price > 0 && product.discount_price < product.price;
-  const discountPercent = hasDiscount ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0;
+  // Ép kiểu Number để tránh lỗi so sánh String (ví dụ: "4000000" < "10000000")
+  const price = Number(product.price);
+  const discountPrice = Number(product.discount_price);
+  
+  // Kiểm tra trạng thái giảm giá
+  const hasDiscount = discountPrice > 0 && discountPrice < price;
+  const discountPercent = hasDiscount ? Math.round(((price - discountPrice) / price) * 100) : 0;
 
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?.id;
@@ -46,6 +50,7 @@ const ProductCard = ({ product }) => {
     navigate(`/product/${product.id}`);
   };
 
+  // Xử lý hiển thị ảnh
   let displayImage = "/images/default-product.jpg";
   try {
     if (product.image) {
@@ -63,7 +68,7 @@ const ProductCard = ({ product }) => {
       <div className="product-img-box" onClick={goToDetail} style={{ cursor: 'pointer' }}>
         <img src={displayImage} alt={product.name} loading="lazy" />
         
-        {/* Nhãn trạng thái & % giảm giá */}
+        {/* Badge phần trăm giảm giá */}
         {hasDiscount && <div className="discount-badge">-{discountPercent}%</div>}
         
         {isOutOfStock ? (
@@ -106,15 +111,15 @@ const ProductCard = ({ product }) => {
           {hasDiscount ? (
             <div className="price-flex">
               <span className="current-price sale-price">
-                {Number(product.discount_price).toLocaleString('vi-VN')}đ
+                {discountPrice.toLocaleString('vi-VN')}đ
               </span>
               <span className="old-price">
-                {Number(product.price).toLocaleString('vi-VN')}đ
+                {price.toLocaleString('vi-VN')}đ
               </span>
             </div>
           ) : (
             <span className="current-price">
-              {Number(product.price).toLocaleString('vi-VN')}đ
+              {price.toLocaleString('vi-VN')}đ
             </span>
           )}
           <span className="stock-count">Kho: <b>{product.stock}</b></span>

@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const upload = require('../cloudinary');
 
-// 1. Lấy danh sách sản phẩm (JOIN đầy đủ thông tin Category, Brand và Flash Sale)
+// Lấy danh sách sản phẩm kèm thông tin Category, Brand và Flash Sale
 router.get('/', async (req, res) => {
     try {
         const query = `
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. Thêm sản phẩm mới
+// Thêm sản phẩm mới
 router.post('/add', upload.array('images', 4), async (req, res) => {
     try {
         const { 
@@ -30,14 +30,11 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
             description, specifications, discount_price, is_flash_sale, selectedFlashSale 
         } = req.body;
 
-        /**
-         * XỬ LÝ FLASH SALE ID:
-         * Nếu checkbox is_flash_sale được tick (1), lấy ID từ dropdown gửi lên.
-         * Nếu không tick, gán NULL.
-         */
+        // Xử lý logic gán ID chiến dịch và trạng thái Flash Sale
         let flash_sale_id = (parseInt(is_flash_sale) === 1) ? (parseInt(selectedFlashSale) || null) : null;
+        let flashSaleStatus = parseInt(is_flash_sale) || 0; 
 
-        // Xử lý lưu trữ mảng ảnh từ Cloudinary
+        // Xử lý danh sách ảnh tải lên Cloudinary
         let imagesData = "[]"; 
         if (req.files && req.files.length > 0) {
             const imageUrls = req.files.map(file => file.path);
@@ -45,9 +42,9 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
         }
 
         const sql = `INSERT INTO products 
-            (name, description, price, stock, image, category_id, brand_id, specifications, discount_price, flash_sale_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        
+            (name, description, price, stock, image, category_id, brand_id, specifications, discount_price, flash_sale_id, is_flash_sale) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
         await db.execute(sql, [
             name, 
             description || "", 
@@ -58,7 +55,8 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
             parseInt(brand_id) || null, 
             specifications || null, 
             parseFloat(discount_price) || 0, 
-            flash_sale_id
+            flash_sale_id,
+            flashSaleStatus
         ]);
 
         res.status(201).json({ message: "Thêm sản phẩm thành công" });
@@ -67,7 +65,7 @@ router.post('/add', upload.array('images', 4), async (req, res) => {
     }
 });
 
-// 3. Cập nhật sản phẩm
+// Cập nhật sản phẩm hiện có
 router.put('/update/:id', upload.array('images', 4), async (req, res) => {
     try {
         const { id } = req.params;
@@ -76,13 +74,11 @@ router.put('/update/:id', upload.array('images', 4), async (req, res) => {
             description, specifications, existingImages, discount_price, is_flash_sale, selectedFlashSale 
         } = req.body;
 
-        /**
-         * XỬ LÝ FLASH SALE ID:
-         * Logic tương tự như phần thêm mới, đảm bảo sản phẩm liên kết đúng đợt sale đã chọn.
-         */
+        // Xử lý logic gán ID chiến dịch và trạng thái Flash Sale
         let flash_sale_id = (parseInt(is_flash_sale) === 1) ? (parseInt(selectedFlashSale) || null) : null;
+        let flashSaleStatus = parseInt(is_flash_sale) || 0; 
 
-        // Xử lý ảnh cũ và ảnh mới
+        // Kết hợp ảnh cũ và ảnh mới tải lên
         let finalImages = JSON.parse(existingImages || "[]");
         if (req.files && req.files.length > 0) {
             const newImageUrls = req.files.map(file => file.path);
@@ -91,7 +87,8 @@ router.put('/update/:id', upload.array('images', 4), async (req, res) => {
 
         const sql = `UPDATE products SET 
             name=?, description=?, price=?, stock=?, image=?, 
-            category_id=?, brand_id=?, specifications=?, discount_price=?, flash_sale_id=? 
+            category_id=?, brand_id=?, specifications=?, discount_price=?, 
+            flash_sale_id=?, is_flash_sale=?
             WHERE id=?`;
 
         await db.execute(sql, [
@@ -104,7 +101,8 @@ router.put('/update/:id', upload.array('images', 4), async (req, res) => {
             parseInt(brand_id) || null, 
             specifications || null, 
             parseFloat(discount_price) || 0, 
-            flash_sale_id, 
+            flash_sale_id,
+            flashSaleStatus,
             id
         ]);
 
@@ -114,7 +112,7 @@ router.put('/update/:id', upload.array('images', 4), async (req, res) => {
     }
 });
 
-// 4. Xóa sản phẩm
+// Xóa sản phẩm
 router.delete('/delete/:id', async (req, res) => {
     try {
         const { id } = req.params;

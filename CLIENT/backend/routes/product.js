@@ -31,35 +31,39 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. API FLASH SALE - Cập nhật logic theo chiến dịch
+// 2. API FLASH SALE
 router.get('/flash-sale', async (req, res) => {
     try {
-        // Tìm chiến dịch đang kích hoạt (status = 1)
+        // 1. Tìm TẤT CẢ chiến dịch đang kích hoạt (status = 1)
         const [activeCampaigns] = await db.execute(
-            'SELECT id, end_time FROM flash_sales WHERE status = 1 LIMIT 1'
+            'SELECT id, end_time FROM flash_sales WHERE status = 1'
         );
 
         if (activeCampaigns.length === 0) {
             return res.json({ products: [], end_time: null });
         }
 
-        const campaign = activeCampaigns[0];
+        // Lấy danh sách ID: [1, 2, 3...]
+        const campaignIds = activeCampaigns.map(c => c.id);
+        
+        // Lấy end_time xa nhất để làm đồng hồ đếm ngược chung
+        const latestEndTime = activeCampaigns[0].end_time; 
 
-        // Lấy sản phẩm thuộc chiến dịch đó
+        // 2. Lấy sản phẩm thuộc bất kỳ chiến dịch nào trong danh sách đang active
         const query = `
-            SELECT p.*, b.name as brand_name, c.name as category_name 
+            SELECT p.*, b.name as brand_name, c.name as category_name
             FROM products p
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN categories c ON p.category_id = c.id
-            WHERE p.flash_sale_id = ? AND p.stock > 0
-            LIMIT 4
+            WHERE p.flash_sale_id IN (${campaignIds.join(',')}) AND p.stock > 0
+            ORDER BY p.id DESC
+            LIMIT 12
         `;
-        const [rows] = await db.execute(query, [campaign.id]);
+        const [rows] = await db.execute(query);
 
-        // Trả về cả danh sách SP và thời gian kết thúc để Frontend làm đồng hồ đếm ngược
         res.json({ 
             products: rows, 
-            end_time: campaign.end_time 
+            end_time: latestEndTime 
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
